@@ -1,3 +1,6 @@
+// 環境設定参考サイト
+// [Windows + Python + PipEnv + Visual Studio Code でPython開発環境](https://qiita.com/youkidkk/items/b674e6ace96eb227cc28)
+// [[Python] コードの自動整形でインデントレベルを2に設定する](https://qiita.com/ksh-fthr/items/7cf8b5f2fde82d1c6bf7)
 {
     // 拡張機能のロード時にターミナルでPython環境をアクティブにする。
     "python.terminal.activateEnvInCurrentTerminal": true,
@@ -7,4 +10,22 @@
         "{$workspaceFolder}/.venv/Lib/site-packages",
     ],
     "python.pythonPath": ".venv/bin/python",
+    "files.eol": "\n", // 改行コードは「LF」
+    "python.linting.enabled": true, // 文法チェックを行う
+    "python.linting.pylintEnabled": false, // pylint は使わない
+    "python.linting.flake8Enabled": true, // 文法チェックにflake8 を使う
+    "python.linting.flake8Args": [ // flake8 の設定
+        "--ignore=E111, E114, E402, E501"
+    ],
+    "python.formatting.provider": "autopep8", // 自動整形に autopep8 を使う
+    "python.formatting.autopep8Args": [ // autopep8 の設定
+        "--indent-size=2",
+        "--ignore=E111, E114, E402, E501"
+    ],
+    "[python]": {
+        "editor.tabSize": 2, // インデントレベルは「2」
+        "editor.formatOnSave": true, // 保存時に自動整形を行う
+        "editor.formatOnPaste": false, // ペースト時に自動整形を行わない
+        "editor.formatOnType": false, // 入力後に自動整形を行わない
+    },
 }
