@@ -55,8 +55,8 @@ def main():
 
   nx.draw_networkx_nodes(G, nodes_position, node_size=30, alpha=1, node_color="blue")
   nx.draw_networkx_edges(G, nodes_position, label=1, edge_color="black", width=1)
-
   plt.savefig("Export/netork.png")
+
   # グラフの表示
   # plt.show()
 
