@@ -15,7 +15,7 @@ from node import node
 def create_nodes(max_nodes):
   nodes = []
   for i in range(max_nodes):
-    nodes.append(node())
+    nodes.append(node(i))
   return nodes
 
 
@@ -30,7 +30,7 @@ def get_nodes_position(nodes):
   nodes_position = []
   for _node in nodes:
     nodes_position.append(_node.position)
-  return nodes_position
+  return dict(zip(nodes, nodes_position))
 
 
 def main():
@@ -41,14 +41,24 @@ def main():
   set_matrix(nodes, ROOT_MAX_NODES)
 
   nodes_position = get_nodes_position(nodes)
-  dict_nodes_position = dict(zip(nodes, nodes_position))
+
+  nodes_link = []
+
+  for _node in nodes:
+    _node.send_hello(nodes)
+    for neighbor in _node.neighbor:
+      nodes_link.append((_node, neighbor))
 
   G = nx.Graph()
   G.add_nodes_from(nodes)
+  G.add_edges_from(nodes_link)
 
-  nx.draw_networkx_nodes(G, nodes, dict_nodes_position, node_size=10, alpha=1, node_color="blue")
+  nx.draw_networkx_nodes(G, nodes_position, node_size=30, alpha=1, node_color="blue")
+  nx.draw_networkx_edges(G, nodes_position, label=1, edge_color="black", width=1)
 
-  plt.show()
+  plt.savefig("Export/netork.png")
+  # グラフの表示
+  # plt.show()
 
 
 if __name__ == "__main__":
