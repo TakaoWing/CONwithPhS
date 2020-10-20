@@ -33,9 +33,9 @@ def main():
 
   # 動画ファイルで保存
   if flag_mp4:
-    ani.save('Export/SaveAnimation.mp4', writer='ffmpeg', fps=my_fps)
+    ani.save('./Export/SaveAnimation.mp4', writer='ffmpeg', fps=my_fps)
   else:
-    ani.save("Export/SaveAnimaiton.gif", writer="imagemagick", fps=my_fps)
+    ani.save("./Export/SaveAnimaiton.gif", writer="imagemagick", fps=my_fps)
 
   # plt.show()
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
   x = np.arange(0, 6, 0.001)  # 道のx範囲（関数のx軸の範囲）
   t = np.arange(0, 6, 0.1)  # 玉が動くxの範囲
 
-  flag_mp4 = True  # mp4で保存しない場合はFalse
+  flag_mp4 = False  # mp4で保存しない場合はFalse
   my_fps = 30  # Frames Per Second
 
   main()
