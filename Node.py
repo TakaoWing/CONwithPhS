@@ -15,8 +15,9 @@ class node:
     self.content_store = {}
     self.pit = {}
     self.fib = {}
-    self.slime = slime()
+    self.slime = slime(self)
     self.communication_range = 60
+    self.want_content = ""
 
   def move(self):
     self.position = (self.position[0] + random.uniform(-1, 1), self.position[1] + random.uniform(-1, 1))

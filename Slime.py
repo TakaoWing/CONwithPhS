@@ -1,9 +1,9 @@
-
 class slime:
-  def __init__(self):
+  def __init__(self, _node):
     self.conductivity = {}
     self.pressure = {}
     self.quantity = {}
+    self.node = _node
 
   def d_d(self):
     print("dD")

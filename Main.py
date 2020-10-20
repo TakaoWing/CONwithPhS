@@ -50,6 +50,19 @@ def get_nodes_link(nodes):
   return nodes_link
 
 
+def get_nodes_color(nodes):
+  nodes_color = []
+  for _node in nodes:
+    if len(_node.content_store) != 0:
+      nodes_color.append("red")
+    elif _node.want_content != "":
+      nodes_color.append("green")
+    else:
+      nodes_color.append("blue")
+
+  return nodes_color
+
+
 def nodes_move(nodes):
   for _node in nodes:
     _node.move()
@@ -60,6 +73,8 @@ def main():
   # ROOT_MAX_NODES = int(np.sqrt(MAX_NODES))
 
   nodes = create_nodes(MAX_NODES)
+  nodes[random.randint(0, MAX_NODES)].content_store = {"www.google.com/logo.png", "data"}
+  nodes[random.randint(0, MAX_NODES)].want_content = "www.google.com/logo.png"
   # set_matrix(nodes, ROOT_MAX_NODES)
   # ノードに偏りが生じないように分散させたい！
   set_random(nodes)
@@ -70,12 +85,13 @@ def main():
     plt.cla()
     nodes_position = get_nodes_position(nodes)
     nodes_link = get_nodes_link(nodes)
+    nodes_color = get_nodes_color(nodes)
 
     G = nx.Graph()
     G.add_nodes_from(nodes)
     G.add_edges_from(nodes_link)
 
-    nx.draw_networkx_nodes(G, nodes_position, node_size=30, alpha=1, node_color="blue")
+    nx.draw_networkx_nodes(G, nodes_position, node_size=30, alpha=1, node_color=nodes_color)
     nx.draw_networkx_edges(G, nodes_position, label=1, edge_color="black", width=2)
     plt.axis('off')
     plt.title("t=" + str(i))
@@ -86,12 +102,13 @@ def main():
     # plt.show()
     nodes_move(nodes)
 
+  animate(0)
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
   anim.save("Export/SaveAnimaiton.gif", writer="imagemagick", fps=fps)
 
 
 if __name__ == "__main__":
   fps = 30
-  t = 200
+  t = 20
   random.seed(0)
   main()
