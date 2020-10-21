@@ -10,17 +10,19 @@ class node:
     self.number = number
     self.position = (0, 0)
     self.neighbor = []
-    self.energy = 100
-    self.buffer_occupancy = 0
+    self.energy = 1
+    self.buffer = 1
     self.content_store = {}
     self.pit = {}
     self.fib = {}
     self.slime = slime(self)
     self.communication_range = 60
     self.want_content = ""
+    self.content_position = (0, 0)
 
   def move(self):
     self.position = (self.position[0] + random.uniform(-1, 1), self.position[1] + random.uniform(-1, 1))
+    return
 
   def send_hello(self, nodes):
     self.neighbor = []
@@ -29,12 +31,21 @@ class node:
         continue
       if distance.euclidean(self.position, _node.position) < self.communication_range:
         self.neighbor.append(_node)
+    self.slime.solve_length()
+    return
 
   def select_next(self):
-    print("select_next")
+    self.slime.physarum_solver()
+    self.select_node = max(self.slime.quantities, key=self.slime.quantities.get)
+    return
 
   def send_packet(self):
+    self.select_next.get_packet(self.want_content)
     print("send_packet")
 
-  def get_packet(self):
+  def get_packet(self, want_content):
+    self.want_content = want_content
+    self.send_hello()
+    self.select_next()
+    self.send_packet()
     print("get_pakcet")
