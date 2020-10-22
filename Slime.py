@@ -1,4 +1,4 @@
-from scipy.spatial import distance
+
 import numpy as np
 
 
@@ -32,27 +32,33 @@ class slime:
       return
     self.length = []
     self.theta_neighbors = []
-    length_d = distance.euclidean(self.node.position, self.node.content_position)
-    length_neighbors = []
-    length_neighbors2d = []
-    for neighbor in self.node.neighbor:
-      length_neighbor = distance.euclidean(self.node.position, neighbor.position)
-      length_neighbor2d = distance.euclidean(neighbor.position, self.node.content_position)
-      length_neighbors.append(length_neighbor)
-      length_neighbors2d.append(length_neighbor2d)
-      s = self.solve_s(length_d, length_neighbor, length_neighbor2d)
-      area = self.solve_area(s, length_d, length_neighbor, length_neighbor2d)
-      h = self.solve_h(area, length_d)
-      theta_neighbor = self.solve_theta_neighbor(h, length_neighbor2d)
-      self.theta_neighbors.append(theta_neighbor)
+    self.pressures = []
+    self.conductivityes = []
+    length_d = self.node.position.distance(self.node.content_position)  # length_d:自分自身とコンテンツ保持端末までの距離
+    for neighbor in self.node.neighbor:  # neighbor:接続されたノード
+      length_neighbor = self.node.position.distance(neighbor.position)  # length_neighbor:自分自身と接続されたノードまでの距離
+      length_neighbor2d = neighbor.position.distance(self.node.content_position)  # length_neighbor2d:neighborからコンテンツ保持端末までの距離
 
-      # x = (length_neighbor * length_neighbor + length_d * length_d - length_neighbor2d * length_neighbor2d) / 2 * length_neighbor * length_d
-      # theta_neighbor = np.arccos(x - int(x))
-      # self.theta_neighbors.append(theta_neighbor)
-      length_neighbor_dash = length_neighbor / np.cos(theta_neighbor)
-      length_neighbor_dash2d = length_d - length_neighbor_dash
-      self.length.append(length_neighbor_dash2d / length_d)
+      s = self.solve_s(length_d, length_neighbor, length_neighbor2d)  # s:自身とneighborとコンテンツ保持端末を結んだ３角形の周りの長さの半分
+      area = self.solve_area(s, length_d, length_neighbor, length_neighbor2d)  # area:３角形の面積
+      h = self.solve_h(area, length_d)  # h: 三角形の高さ
+      theta_neighbor = self.solve_theta_neighbor(h, length_neighbor2d)  # 三角形の角度
+      length_neighbor_dash = length_neighbor / np.cos(theta_neighbor)  # 自身とneighborまでの投影距離
+      length_neighbor_dash2d = length_d - length_neighbor_dash  # neighorとコンテンツまでの投影距離
+      length = length_neighbor_dash2d / length_d
 
+      pressure_neighbor = self.alpha * neighbor.energy + self.beta * neighbor.buffer
+
+      conductivitiy_neighbor = (pressure_neighbor - self.P_MIN) / (self.P_MAX - self.P_MIN)
+
+      quantity_neighbor = conductivitiy_neighbor * pressure_neighbor / length
+
+      # データの格納
+      self.theta_neighbors.append(theta_neighbor)  # 角度をtheta_neighborsに格納
+      self.length.append(length)  # 菅の長さ(L_j'd/L_id)をlengthに格納
+      self.pressures.append(pressure_neighbor)
+      self.conductivities.append(conductivitiy_neighbor)
+      self.quantities.append(quantity_neighbor)
     return
 
   def init_d(self):

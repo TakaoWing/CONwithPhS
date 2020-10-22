@@ -12,6 +12,7 @@ from matplotlib.animation import FuncAnimation
 
 # my classess
 from node import node
+from node import content
 
 
 def create_nodes(max_nodes):
@@ -24,13 +25,13 @@ def create_nodes(max_nodes):
 def set_matrix(nodes, root_max_nodes):
   for i in range(root_max_nodes):
     for j in range(root_max_nodes):
-      nodes[j + i * root_max_nodes].position = (i, j)
+      nodes[j + i * root_max_nodes].position.set_vector(i, j)
   return nodes
 
 
 def set_random(nodes):
   for _node in nodes:
-    _node.position = (random.uniform(0, 400), random.uniform(0, 400))
+    _node.position.set_vector(random.uniform(0, 400), random.uniform(0, 400))
   return nodes
 
 
@@ -81,7 +82,8 @@ def main():
 
   nodes = create_nodes(MAX_NODES)
   have_content_node = random.randint(0, MAX_NODES)
-  nodes[have_content_node].content_store = {"www.google.com/logo.png", "data"}
+  nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
+  print(nodes[have_content_node].content_store[0].packets)
   want_content_node = random.randint(0, MAX_NODES)
   nodes[want_content_node].want_content = "www.google.com/logo.png"
   nodes[want_content_node].content_position = nodes[have_content_node].position
