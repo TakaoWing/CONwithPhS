@@ -4,6 +4,7 @@ from scipy.spatial import distance
 from slime import slime
 import random
 import math
+import queue
 
 
 class content:  # コンテンツの情報をまとめたもの
@@ -39,6 +40,8 @@ class position:
 
 
 class node:  # ノードの情報や処理
+  que = queue.Queue()
+
   def __init__(self, number):
     self.number = number
     self.position = position(0, 0)
@@ -73,12 +76,27 @@ class node:  # ノードの情報や処理
     return
 
   def send_packet(self):
+    node.que.set(self.select_next)
     self.select_next.get_packet(self.want_content)
-    print("send_packet")
+    return
+
+  def check_have_content(self, content):
+    return
 
   def get_packet(self, want_content):
     self.want_content = want_content
+    # content_storeにコンテンツがあるか確認 -(yes)> pitを元にdataパケットを送信する -> Interestパケットを破棄する
+    self.check_have_content()
+    # pitに要求されたコンテンツ名があるか確認 -(yes)> pitにInterestパケットを受信したフェイスを追記する -> Interestパケットを廃棄する
+    self.check_have_pit()
+    # fibに要求されたコンテンツ名があるか確認 -(no,yes)> フィザルムソルバーによって，fibを変更する
+    # self.check_have_fib()
+    # 接続状態を確認
     self.send_hello()
+    # 次のノードを選択
     self.select_next()
+    # pitにinterestパケットを受信したフェイスを記入する
+    self.right_pit()
+    # パケットを転送する
     self.send_packet()
-    print("get_pakcet")
+    return
