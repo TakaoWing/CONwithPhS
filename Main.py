@@ -15,34 +15,33 @@ from node import node
 from node import content
 
 
-def create_nodes(max_nodes):
-  nodes = []
+def create_nodes(max_nodes):  # ノードの作成
+  nodes = []  # ノードの初期化
+  # 最大ノード数だけノードを生成
   for i in range(max_nodes):
     nodes.append(node(i))
   return nodes
 
 
-def set_matrix(nodes, root_max_nodes):
+def set_matrix(nodes, root_max_nodes):  # ノードを格子状に配置
   for i in range(root_max_nodes):
     for j in range(root_max_nodes):
       nodes[j + i * root_max_nodes].position.set_vector(i, j)
   return nodes
 
 
-def set_random(nodes):
+def set_random(nodes, field_size):  # ノードをランダムを広さ(diled_size)上に配置
   for _node in nodes:
-    _node.position.set_vector(random.uniform(0, 400), random.uniform(0, 400))
+    _node.position.set_vector(random.uniform(0, field_size), random.uniform(0, field_size))
   return nodes
 
 
-def get_nodes_position(nodes):
-  nodes_position = []
-  for _node in nodes:
-    nodes_position.append(_node.position)
+def get_nodes_position(nodes):  # ノードの場所を辞書型配列{ノード,ノードの場所}を返す
+  nodes_position = [_node.position for _node in nodes]
   return dict(zip(nodes, nodes_position))
 
 
-def get_nodes_link(nodes):
+def get_nodes_link(nodes):  # ノード同士が接続関係を配列で返す
   nodes_link = []
   for _node in nodes:
     _node.send_hello(nodes)
@@ -51,7 +50,7 @@ def get_nodes_link(nodes):
   return nodes_link
 
 
-def get_nodes_color(nodes):
+def get_nodes_color(nodes):  # ノードの色をコンテンツを保持しているか，コンテンツを要求しているかで指定し配列で返す
   nodes_color = []
   for _node in nodes:
     if len(_node.content_store) != 0:
@@ -64,32 +63,29 @@ def get_nodes_color(nodes):
   return nodes_color
 
 
-def get_nodes_name(nodes):
-  nodes_name = []
-  for _node in nodes:
-    nodes_name.append(_node.number)
+def get_nodes_name(nodes):  # ノードの名前を辞書型配列で返す
+  nodes_name = [_node.number for _node in nodes]
   return dict(zip(nodes, nodes_name))
 
 
-def nodes_move(nodes):
+def nodes_move(nodes):  # nodeの動きをまとめて実装
   for _node in nodes:
     _node.move()
 
 
 def main():
-  MAX_NODES = 100
-  # ROOT_MAX_NODES = int(np.sqrt(MAX_NODES))
+  MAX_NODES = 100  # ノードを数を設定
+  nodes = create_nodes(MAX_NODES)  # max_nodesだけノードを生成
 
-  nodes = create_nodes(MAX_NODES)
+  # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = random.randint(0, MAX_NODES)
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
-  print(nodes[have_content_node].content_store[0].packets)
   want_content_node = random.randint(0, MAX_NODES)
   nodes[want_content_node].want_content = "www.google.com/logo.png"
   nodes[want_content_node].content_position = nodes[have_content_node].position
-  # set_matrix(nodes, ROOT_MAX_NODES)
+
   # ノードに偏りが生じないように分散させたい！
-  set_random(nodes)
+  set_random(nodes=nodes, field_size=400)
 
   fig = plt.figure(figsize=(20, 20))
 
