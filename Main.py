@@ -77,16 +77,16 @@ def main():
   MAX_NODES = 100  # ノードを数を設定
   nodes = create_nodes(MAX_NODES)  # max_nodesだけノードを生成
 
+  # ノードに偏りが生じないように分散させたい！
+  set_random(nodes=nodes, field_size=400)
+
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = random.randint(0, MAX_NODES)
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
   want_content_node = random.randint(0, MAX_NODES)
-  nodes[want_content_node].want_content = "www.google.com/logo.png"
-  nodes[want_content_node].content_position = nodes[have_content_node].position
-
-  # ノードに偏りが生じないように分散させたい！
-  set_random(nodes=nodes, field_size=400)
-
+  nodes[want_content_node].set_packet("www.google.com/logo.png")
+  nodes[want_content_node].packet.content_positions[nodes[have_content_node]] = nodes[have_content_node].position
+  print(node.que.qsize())
   fig = plt.figure(figsize=(20, 20))
 
   def animate(i):

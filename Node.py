@@ -2,6 +2,7 @@
 # node: ノードの情報や処理
 from scipy.spatial import distance
 from slime import slime
+from packet import packet
 import random
 import math
 import queue
@@ -53,8 +54,9 @@ class node:  # ノードの情報や処理
     self.fib = {}
     self.slime = slime(self)
     self.communication_range = 60
-    self.want_content = ""
     self.content_position = position(0, 0)
+    self.buffer_queue = queue.Queue()
+    self.packet = None
 
   def move(self):
     self.position.move()
@@ -76,15 +78,23 @@ class node:  # ノードの情報や処理
     return
 
   def send_packet(self):
+    self.select_next.buffer_queue.put(self.packet)
+    self.packet = None
     node.que.set(self.select_next)
-    self.select_next.get_packet(self.want_content)
     return
 
   def check_have_content(self, content):
+    if not self.content_store:  # コンテンツストアが空の場合，終了
+      return
+
+    return
+
+  def set_packet(self, want_content):
+    self.buffer_queue.put(packet(self, want_content))
+    node.que.put(self)
     return
 
   def get_packet(self, want_content):
-    self.want_content = want_content
     # content_storeにコンテンツがあるか確認 -(yes)> pitを元にdataパケットを送信する -> Interestパケットを破棄する
     self.check_have_content()
     # pitに要求されたコンテンツ名があるか確認 -(yes)> pitにInterestパケットを受信したフェイスを追記する -> Interestパケットを廃棄する
