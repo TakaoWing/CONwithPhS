@@ -53,11 +53,12 @@ class node:  # ノードの情報や処理
     self.content_store = []
     self.pit = {}
     self.fib = {}
-    self.slime = slime(self)
+    self.slimes = {}
     self.communication_range = 60
     self.content_position = position(0, 0)
     self.buffer_queue = queue.Queue()
     self.packet = None
+    self.select_next_node = []
 
   def move(self):
     self.position.move()
@@ -107,17 +108,24 @@ class node:  # ノードの情報や処理
         self.neighbor.append(_node)
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
-    self.slime.solve_length()
+    # self.slime.init_physarum_solver()
     return
 
   def select_next(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
-      self.select_next = self.pit[self.packet.content_id]
+      self.select_next_node.append(self.pit[self.packet.content_id])
     else:
-      self.slime.physarum_solver()
-      self.select_node = max(self.slime.quantities, key=self.slime.quantities.get)
+      if self.packet.content_id in self.slimes:
+        self.slimes[self.packet.content_id].physarum_solver()
+      else:
+        self.slimes[self.packet.content_id] = slime(self)
+        self.slimes[self.packet.content_id].init_physarum_solver()
+      for (k, v) in self.slimes[self.packet.content_id].quantities.items():
+        print("{}:{}".format(k.number, v))
+
+      self.select_next_node.append(max(self.slimes[self.packet.content_id].quantities, key=self.slimes[self.packet.content_id].quantities.get))
     return
 
   def write_pit(self):
@@ -139,9 +147,9 @@ class node:  # ノードの情報や処理
       return
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
-    for sn in self.select_next:
+    for sn in self.select_next_node:
       sn.buffer_queue.put(self.packet)
-      node.que.set(sn)
+      node.que.put(sn)
 
     self.packet = None
     return

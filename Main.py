@@ -86,7 +86,6 @@ def main():
   want_content_node = random.randint(0, MAX_NODES)
   nodes[want_content_node].set_packet("www.google.com/logo.png")
   # nodes[want_content_node].packet.content_positions[nodes[have_content_node]] = nodes[have_content_node].position
-  print(node.que.qsize())
   fig = plt.figure(figsize=(20, 20))
 
   def animate(i):
@@ -95,7 +94,6 @@ def main():
     nodes_link = get_nodes_link(nodes)
     nodes_color = get_nodes_color(nodes)
     nodes_name = get_nodes_name(nodes)
-    nodes[want_content_node].select_next()
     G = nx.Graph()
     G.add_nodes_from(nodes)
     G.add_edges_from(nodes_link)
@@ -113,6 +111,7 @@ def main():
     # nodes_move(nodes)
     while not node.que.empty():
       _node = node.que.get()
+      print("Node{} process packet-protocol".format(_node.number))
       _node.packet_protocol(nodes)
 
   animate(0)
