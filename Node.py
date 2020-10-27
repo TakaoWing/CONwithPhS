@@ -63,6 +63,33 @@ class node:  # ノードの情報や処理
     self.position.move()
     return
 
+  def set_packet(self, want_content):
+    self.buffer_queue.put(interest_packet(self, want_content))
+    node.que.put(self)
+    return
+
+  def get_packet(self):
+    if self.packet:  # パケットを持っているなら処理を実行しない．　
+      return
+    self.packet = self.select_next.buffer_queue.get()
+    return
+
+  def check_have_content(self, content):
+    if not self.content_store:  # コンテンツストアが空の場合，終了
+      return
+    content_ids = [file.content_id for file in self.content_store]
+    if content.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
+      return
+    content_store_index = content_ids.index(content.content_id)
+    self.packet = data_packet(self, content.id)
+    self.packet.data_size = self.content_store[content_store_index].data_size
+    return
+
+  def check_have_pit(self, content):
+    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      return
+    return
+
   def send_hello(self, nodes):
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
@@ -86,38 +113,27 @@ class node:  # ノードの情報や処理
   def write_pit(self):
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
+    if self.packet.content_id in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
+      # PITのコンテンツIDの中に前のノードがない場合，追加する
+      if self.packet.position_node not in self.pit[self.packet.content_id]:
+        self.pit[self.packet.content_id].append(self.packet.position_node)
+    else:  # PITにない場合，新しく登録する
+      self.pit[self.packet.content_id] = []
+      self.pit[self.packet.content_id].append(self.packet.position_node)
     return
 
   def send_packet(self):
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
-    self.select_next.buffer_queue.put(self.packet)
+    for sn in self.select_next:
+      sn.buffer_queue.put(self.packet)
+      node.que.set(sn)
+
     self.packet = None
-    node.que.set(self.select_next)
     return
 
-  def check_have_content(self, content):
-    if not self.content_store:  # コンテンツストアが空の場合，終了
-      return
-    content_ids = [file.content_id for file in self.content_store]
-    if content.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
-      return
-    content_store_index = content_ids.index(content.content_id)
-    self.packet = data_packet(self, content.id)
-    self.packet.data_size = self.content_store[content_store_index].data_size
-    return
-
-  def check_have_pit(self, content):
-    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
-      return
-    return
-
-  def set_packet(self, want_content):
-    self.buffer_queue.put(interest_packet(self, want_content))
-    node.que.put(self)
-    return
-
-  def get_packet(self, want_content):
+  def packet_protocol(self):
+    self.get_packet()
     # content_storeにコンテンツがあるか確認 -(yes)> pitを元にdataパケットを送信する -> Interestパケットを破棄する
     self.check_have_content()
     # pitに要求されたコンテンツ名があるか確認 -(yes)> pitにInterestパケットを受信したフェイスを追記する -> Interestパケットを廃棄する
