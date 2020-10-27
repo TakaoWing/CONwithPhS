@@ -84,8 +84,7 @@ def main():
   have_content_node = random.randint(0, MAX_NODES)
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
   want_content_node = random.randint(0, MAX_NODES)
-  nodes[want_content_node].set_packet("www.google.com/logo.png")
-  # nodes[want_content_node].packet.content_positions[nodes[have_content_node]] = nodes[have_content_node].position
+  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
   fig = plt.figure(figsize=(20, 20))
 
   def animate(i):
@@ -104,7 +103,7 @@ def main():
     plt.axis('off')
     plt.title("t=" + str(i))
     # グラフの保存
-    # plt.savefig("Export/netork.png")
+    plt.savefig("Export/netork.png")
 
     # グラフの表示
     # plt.show()

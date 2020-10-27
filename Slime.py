@@ -35,7 +35,7 @@ class slime:
 
   def solve_length(self, neighbor, length_d):
     length_neighbor = self.node.position.distance(neighbor.position)  # length_neighbor:自分自身と接続されたノードまでの距離
-    length_neighbor2d = neighbor.position.distance(self.node.content_position)  # length_neighbor2d:neighborからコンテンツ保持端末までの距離
+    length_neighbor2d = neighbor.position.distance(self.node.packet.content_positions)  # length_neighbor2d:neighborからコンテンツ保持端末までの距離
 
     s = self.solve_s(length_d, length_neighbor, length_neighbor2d)  # s:自身とneighborとコンテンツ保持端末を結んだ３角形の周りの長さの半分
     area = self.solve_area(s, length_d, length_neighbor, length_neighbor2d)  # area:３角形の面積
@@ -71,7 +71,7 @@ class slime:
     self.theta_neighbors = {}
     self.pressures = {}
     self.conductivities = {}
-    length_d = self.node.position.distance(self.node.content_position)  # length_d:自分自身とコンテンツ保持端末までの距離
+    length_d = self.node.position.distance(self.node.packet.content_positions)  # length_d:自分自身とコンテンツ保持端末までの距離
     for neighbor in self.node.neighbor:  # neighbor:接続されたノード
       length, theta_neighbor = self.solve_length(neighbor, length_d)  # 投影距離の計算 L_ij
       pressure_neighbor = self.solve_delta_p(neighbor)  # 圧力差の計算 dp_ij
@@ -88,7 +88,7 @@ class slime:
     self.length = {}
     self.theta_neighbors = {}
     self.pressures = {}
-    length_d = self.node.position.distance(self.node.content_position)  # length_d:自分自身とコンテンツ保持端末までの距離
+    length_d = self.node.position.distance(self.node.packet.content_positions)  # length_d:自分自身とコンテンツ保持端末までの距離
     for neighbor in self.node.neighbor:  # neighbor:接続されたノード
       length, theta_neighbor = self.solve_length(neighbor, length_d)  # 投影距離の計算 L_ij
       pressure_neighbor = self.solve_delta_p(neighbor)  # 圧力差の計算 dp_ij

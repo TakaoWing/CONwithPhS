@@ -64,8 +64,8 @@ class node:  # ノードの情報や処理
     self.position.move()
     return
 
-  def set_packet(self, want_content):
-    self.buffer_queue.put(interest_packet(self, want_content))
+  def set_packet(self, want_content, content_positions=None):
+    self.buffer_queue.put(interest_packet(self, want_content, content_positions))
     node.que.put(self)
     return
 
@@ -73,9 +73,13 @@ class node:  # ノードの情報や処理
     # if self.packet is not None:  # パケットを持っているなら処理を実行しない．　
     #   return
     self.packet = self.buffer_queue.get()
+    if self.packet.is_living():  # パケットがTTL以上の場合破棄する
+      self.packet = None
     return
 
   def check_have_content(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
     content_ids = [file.content_id for file in self.content_store]
@@ -87,6 +91,8 @@ class node:  # ノードの情報や処理
     return
 
   def check_have_pit(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
     if self.packet.content_id not in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
@@ -114,6 +120,7 @@ class node:  # ノードの情報や処理
   def select_next(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
+    self.select_next_node = []
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       self.select_next_node.append(self.pit[self.packet.content_id])
     else:
@@ -147,10 +154,10 @@ class node:  # ノードの情報や処理
       return
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
+    self.packet.living_time += 1
     for sn in self.select_next_node:
       sn.buffer_queue.put(self.packet)
       node.que.put(sn)
-
     self.packet = None
     return
 
