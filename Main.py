@@ -55,7 +55,7 @@ def get_nodes_color(nodes):  # ノードの色をコンテンツを保持して�
   for _node in nodes:
     if len(_node.content_store) != 0:
       nodes_color.append("red")
-    elif _node.want_content != "":
+    elif _node.packet is not None:
       nodes_color.append("green")
     else:
       nodes_color.append("blue")
@@ -85,7 +85,7 @@ def main():
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
   want_content_node = random.randint(0, MAX_NODES)
   nodes[want_content_node].set_packet("www.google.com/logo.png")
-  nodes[want_content_node].packet.content_positions[nodes[have_content_node]] = nodes[have_content_node].position
+  # nodes[want_content_node].packet.content_positions[nodes[have_content_node]] = nodes[have_content_node].position
   print(node.que.qsize())
   fig = plt.figure(figsize=(20, 20))
 
@@ -110,7 +110,10 @@ def main():
 
     # グラフの表示
     # plt.show()
-    nodes_move(nodes)
+    # nodes_move(nodes)
+    while not node.que.empty:
+      _node = node.get()
+      _node.packet_protocol()
 
   animate(0)
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)

@@ -15,3 +15,7 @@ else:
   d["ba"].append(45)
 
 print(d)
+
+d = None
+if d is None:
+  print("削除されているよ！")

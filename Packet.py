@@ -11,13 +11,13 @@ class packet:
 
 class interest_packet(packet):
   def __init__(self, _node, content_id):
-    super(packet, self, _node, content_id).__init__()
+    super().__init__(_node, content_id)
     self.content_positions = {}  # コンテンツを保存しているノード
 
 
 class data_packet(packet):
   def __init__(self, _node, content_id):
-    super(packet, self, _node, content_id).__init__()
+    super().__init__(_node, content_id)
     self.user_position = None  # ノードのpitを元に経路選択されるため，必要ではない，しかし，最適経路を選択する上では必要かも
     self.data_size = 0  # コンテンツのデータサイズ
     self.data = 0  # パケットのデータサイズ[kbyte]

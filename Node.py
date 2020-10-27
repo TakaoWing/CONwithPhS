@@ -88,10 +88,16 @@ class node:  # ノードの情報や処理
   def check_have_pit(self, content):
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
+    if self.packet.content_id not in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
+      return
+    if self.packet.position_node in self.pit[self.packet.content_id]:  # PITのコンテンツIDの中に前のノードがない場合，追加する
+      return
+    self.pit[self.packet.content_id].append(self.packet.position_node)
+    self.packet = None  # Interestパケットを廃棄する
     return
 
   def send_hello(self, nodes):
-    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
     self.neighbor = []
     for _node in nodes:
@@ -99,10 +105,14 @@ class node:  # ノードの情報や処理
         continue
       if self.position.distance(_node.position) < self.communication_range:
         self.neighbor.append(_node)
+    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      return
     self.slime.solve_length()
     return
 
   def select_next(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       self.select_next = self.pit[self.packet.content_id]
     else:
@@ -111,6 +121,8 @@ class node:  # ノードの情報や処理
     return
 
   def write_pit(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
     if self.packet.content_id in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
@@ -123,6 +135,8 @@ class node:  # ノードの情報や処理
     return
 
   def send_packet(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
     for sn in self.select_next:
