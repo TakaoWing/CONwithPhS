@@ -69,12 +69,12 @@ class node:  # ノードの情報や処理
     return
 
   def get_packet(self):
-    if self.packet:  # パケットを持っているなら処理を実行しない．　
-      return
-    self.packet = self.select_next.buffer_queue.get()
+    # if self.packet is not None:  # パケットを持っているなら処理を実行しない．　
+    #   return
+    self.packet = self.buffer_queue.get()
     return
 
-  def check_have_content(self, content):
+  def check_have_content(self):
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
     content_ids = [file.content_id for file in self.content_store]
@@ -85,7 +85,7 @@ class node:  # ノードの情報や処理
     self.packet.data_size = self.content_store[content_store_index].data_size
     return
 
-  def check_have_pit(self, content):
+  def check_have_pit(self):
     if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
     if self.packet.content_id not in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
@@ -101,7 +101,7 @@ class node:  # ノードの情報や処理
       return
     self.neighbor = []
     for _node in nodes:
-      if _node == self:
+      if _node is self:
         continue
       if self.position.distance(_node.position) < self.communication_range:
         self.neighbor.append(_node)
@@ -146,7 +146,7 @@ class node:  # ノードの情報や処理
     self.packet = None
     return
 
-  def packet_protocol(self):
+  def packet_protocol(self, nodes):
     self.get_packet()
     # content_storeにコンテンツがあるか確認 -(yes)> pitを元にdataパケットを送信する -> Interestパケットを破棄する
     self.check_have_content()
@@ -155,7 +155,7 @@ class node:  # ノードの情報や処理
     # fibに要求されたコンテンツ名があるか確認 -(no,yes)> フィザルムソルバーによって，fibを変更する
     # self.check_have_fib()
     # 接続状態を確認
-    self.send_hello()
+    self.send_hello(nodes)
     # 次のノードを選択
     self.select_next()
     # pitにinterestパケットを受信したフェイスを記入する

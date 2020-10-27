@@ -37,7 +37,7 @@ def set_random(nodes, field_size):  # ノードをランダムを広さ(diled_si
 
 
 def get_nodes_position(nodes):  # ノードの場所を辞書型配列{ノード,ノードの場所}を返す
-  nodes_position = [_node.position for _node in nodes]
+  nodes_position = [_node.position.get_vector() for _node in nodes]
   return dict(zip(nodes, nodes_position))
 
 
@@ -111,9 +111,9 @@ def main():
     # グラフの表示
     # plt.show()
     # nodes_move(nodes)
-    while not node.que.empty:
-      _node = node.get()
-      _node.packet_protocol()
+    while not node.que.empty():
+      _node = node.que.get()
+      _node.packet_protocol(nodes)
 
   animate(0)
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
