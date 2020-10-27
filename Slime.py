@@ -85,15 +85,19 @@ class slime:
     return
 
   def physarum_solver(self):
-    self.length = []
-    self.theta_neighbors = []
-    self.pressures = []
+    self.length = {}
+    self.theta_neighbors = {}
+    self.pressures = {}
     length_d = self.node.position.distance(self.node.content_position)  # length_d:自分自身とコンテンツ保持端末までの距離
     for neighbor in self.node.neighbor:  # neighbor:接続されたノード
-      length = self.solve_length(neighbor, length_d)  # 投影距離の計算 L_ij
+      length, theta_neighbor = self.solve_length(neighbor, length_d)  # 投影距離の計算 L_ij
       pressure_neighbor = self.solve_delta_p(neighbor)  # 圧力差の計算 dp_ij
       growth_rate_neighbor = self.growth_rate(self.quantities[neighbor])  # 成長率の計算 f(|Qij|)
       conductivity_neighbor = self.solve_d(self.conductivities[neighbor], growth_rate_neighbor)  # 伝導率の計算 D_ij
       quantity_neighbor = self.solve_q(conductivity_neighbor, pressure_neighbor, length)  # 流量の計算 Q_ij
+      self.theta_neighbors[neighbor] = theta_neighbor  # 角度をtheta_neighborsに格納
+      self.length[neighbor] = length  # 菅の長さ(L_j'd/L_id)をlengthに格納
+      self.pressures[neighbor] = pressure_neighbor
+      self.conductivities[neighbor] = conductivity_neighbor
       self.quantities[neighbor] = quantity_neighbor
     return
