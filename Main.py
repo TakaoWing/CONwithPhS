@@ -44,7 +44,7 @@ def get_nodes_position(nodes):  # ノードの場所を辞書型配列{ノード
 def get_nodes_link(nodes):  # ノード同士が接続関係を配列で返す
   nodes_link = []
   for _node in nodes:
-    _node.send_hello(nodes)
+    _node.connect_links(nodes)
     for neighbor in _node.neighbor:
       nodes_link.append((_node, neighbor))
   return nodes_link

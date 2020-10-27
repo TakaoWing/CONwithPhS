@@ -60,6 +60,15 @@ class node:  # ノードの情報や処理
     self.packet = None
     self.select_next_node = []
 
+  def connect_links(self, nodes):
+    self.neighbor = []
+    for _node in nodes:
+      if _node is self:
+        continue
+      if self.position.distance(_node.position) < self.communication_range:
+        self.neighbor.append(_node)
+    return
+
   def move(self):
     self.position.move()
     return
