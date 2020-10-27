@@ -2,7 +2,8 @@
 # node: ノードの情報や処理
 from scipy.spatial import distance
 from slime import slime
-from packet import packet
+from packet import interest_packet
+from packet import data_packet
 import random
 import math
 import queue
@@ -63,6 +64,8 @@ class node:  # ノードの情報や処理
     return
 
   def send_hello(self, nodes):
+    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      return
     self.neighbor = []
     for _node in nodes:
       if _node == self:
@@ -73,11 +76,21 @@ class node:  # ノードの情報や処理
     return
 
   def select_next(self):
-    self.slime.physarum_solver()
-    self.select_node = max(self.slime.quantities, key=self.slime.quantities.get)
+    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      self.select_next = self.pit[self.packet.content_id]
+    else:
+      self.slime.physarum_solver()
+      self.select_node = max(self.slime.quantities, key=self.slime.quantities.get)
+    return
+
+  def write_pit(self):
+    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      return
     return
 
   def send_packet(self):
+    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      return
     self.select_next.buffer_queue.put(self.packet)
     self.packet = None
     node.que.set(self.select_next)
@@ -86,11 +99,21 @@ class node:  # ノードの情報や処理
   def check_have_content(self, content):
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
+    content_ids = [file.content_id for file in self.content_store]
+    if content.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
+      return
+    content_store_index = content_ids.index(content.content_id)
+    self.packet = data_packet(self, content.id)
+    self.packet.data_size = self.content_store[content_store_index].data_size
+    return
 
+  def check_have_pit(self, content):
+    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      return
     return
 
   def set_packet(self, want_content):
-    self.buffer_queue.put(packet(self, want_content))
+    self.buffer_queue.put(interest_packet(self, want_content))
     node.que.put(self)
     return
 
@@ -106,7 +129,7 @@ class node:  # ノードの情報や処理
     # 次のノードを選択
     self.select_next()
     # pitにinterestパケットを受信したフェイスを記入する
-    self.right_pit()
+    self.write_pit()
     # パケットを転送する
     self.send_packet()
     return
