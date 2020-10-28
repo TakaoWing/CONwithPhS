@@ -1,5 +1,6 @@
 
 import numpy as np
+from numpy import linalg as LA
 
 
 class slime:
@@ -33,14 +34,33 @@ class slime:
   def solve_theta_neighbor(self, h, c):
     return np.arcsin(h / c)
 
-  def solve_length(self, neighbor, length_d):
-    length_neighbor = self.node.position.distance(neighbor.position)  # length_neighbor:自分自身と接続されたノードまでの距離
-    length_neighbor2d = neighbor.position.distance(self.node.packet.content_positions)  # length_neighbor2d:neighborからコンテンツ保持端末までの距離
+  def tangent_angle(self, u: np.ndarray, v: np.ndarray):
+    i = np.inner(u, v)
+    n = LA.norm(u) * LA.norm(v)
+    c = i / n
+    return np.arccos(np.clip(c, -1.0, 1.0))  # np.rad2deg(np.arccos(np.clip(c, -1.0, 1.0)))
 
-    s = self.solve_s(length_d, length_neighbor, length_neighbor2d)  # s:自身とneighborとコンテンツ保持端末を結んだ３角形の周りの長さの半分
-    area = self.solve_area(s, length_d, length_neighbor, length_neighbor2d)  # area:３角形の面積
-    h = self.solve_h(area, length_d)  # h: 三角形の高さ
-    theta_neighbor = self.solve_theta_neighbor(h, length_neighbor2d)  # 三角形の角度
+  def solve_length(self, neighbor, length_d):
+
+    vector_me = self.node.position.get_vector()
+    vector_neighbor = neighbor.position.get_vector()
+    vector_distination = self.node.packet.content_positions.get_vector()
+
+    vector_me2neighbor = list(map(lambda vec1, vec2: vec1 - vec2, vector_me, vector_neighbor))
+    vector_me2d = list(map(lambda vec1, vec2: vec1 - vec2, vector_me, vector_distination))
+    # vector_neighbor2d = list(map(lambda vec1, vec2: vec1 - vec2, vector_neighbor, vector_distination))
+
+    a = np.array(vector_me2neighbor)
+    b = np.array(vector_me2d)
+
+    length_neighbor = self.node.position.distance(neighbor.position)  # length_neighbor:自分自身と接続されたノードまでの距離
+    # length_neighbor2d = neighbor.position.distance(self.node.packet.content_positions)  # length_neighbor2d:neighborからコンテンツ保持端末までの距離
+
+    # s = self.solve_s(length_d, length_neighbor, length_neighbor2d)  # s:自身とneighborとコンテンツ保持端末を結んだ３角形の周りの長さの半分
+    # area = self.solve_area(s, length_d, length_neighbor, length_neighbor2d)  # area:３角形の面積
+    # h = self.solve_h(area, length_d)  # h: 三角形の高さ
+    # theta_neighbor = self.solve_theta_neighbor(h, length_neighbor2d)  # 三角形の角度
+    theta_neighbor = self.tangent_angle(a, b)
     length_neighbor_dash = length_neighbor / np.cos(theta_neighbor)  # 自身とneighborまでの投影距離
     length_neighbor_dash2d = length_d - length_neighbor_dash  # neighorとコンテンツまでの投影距離
     length = length_neighbor_dash2d / length_d
