@@ -92,17 +92,17 @@ class node:  # ノードの情報や処理
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
     content_ids = [file.content_id for file in self.content_store]
-    if content.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
+    if self.packet.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
       return
-    content_store_index = content_ids.index(content.content_id)
-    self.packet = data_packet(self, content.id)
-    self.packet.data_size = self.content_store[content_store_index].data_size
+    # Interestパケットが送信されたFaceに対して，Dataパケットを送信
+    content_store_index = content_ids.index(self.packet.content_id)
+    self.packet.position_node.buffer_queue.put(data_packet(self, self.packet.content_id, self.content_store[content_store_index].data_size))
+    node.que.put(self.packet.position_node)
+    self.packet = None  # パケットを破棄する
     return
 
   def check_have_pit(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
-      return
-    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
     if self.packet.content_id not in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       return
@@ -126,28 +126,55 @@ class node:  # ノードの情報や処理
     # self.slime.init_physarum_solver()
     return
 
+  # def select_next(self):
+  #   if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+  #     return
+  #   self.select_next_node = []
+  #   if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+  #     if self.packet.content_id in self.pit:  # PITにContentIDが含まれている場合
+  #       self.select_next_node.extend(list(face for face in self.pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
+  #     else:
+  #       # if self.packet.position_node not in self.select_next_node:  # PITにInterestパケットが送信されたノードが含まれてない場合
+  #       self.select_next_node.append(self.packet.position_node)  # 次に送信するノードに登録する
+  #   else:
+  #     if self.packet.content_id in self.slimes:
+  #       self.slimes[self.packet.content_id].physarum_solver()
+  #     else:
+  #       self.slimes[self.packet.content_id] = slime(self)
+  #       self.slimes[self.packet.content_id].init_physarum_solver()
+  #     for (k, v) in self.slimes[self.packet.content_id].quantities.items():
+  #       print("{}:{}".format(k.number, v))
+
+  #     self.select_next_node.append(max(self.slimes[self.packet.content_id].quantities, key=self.slimes[self.packet.content_id].quantities.get))
+  #   return
+
   def select_next(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
     self.select_next_node = []
-    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
-      self.select_next_node.append(self.pit[self.packet.content_id])
+    if self.packet.content_id in self.slimes:
+      self.slimes[self.packet.content_id].physarum_solver()
     else:
-      if self.packet.content_id in self.slimes:
-        self.slimes[self.packet.content_id].physarum_solver()
-      else:
-        self.slimes[self.packet.content_id] = slime(self)
-        self.slimes[self.packet.content_id].init_physarum_solver()
-      for (k, v) in self.slimes[self.packet.content_id].quantities.items():
-        print("{}:{}".format(k.number, v))
+      self.slimes[self.packet.content_id] = slime(self)
+      self.slimes[self.packet.content_id].init_physarum_solver()
+    for (k, v) in self.slimes[self.packet.content_id].quantities.items():
+      print("{}:{}".format(k.number, v))
 
-      self.select_next_node.append(max(self.slimes[self.packet.content_id].quantities, key=self.slimes[self.packet.content_id].quantities.get))
+    self.select_next_node.append(max(self.slimes[self.packet.content_id].quantities, key=self.slimes[self.packet.content_id].quantities.get))
+    return
+
+  def select_next_data(self):
+    if self.packet is None:
+      return
+    if self.packet.content_id not in self.pit:  # PITにContentIDが含まれている場合
+      self.packet = None
+      return
+    self.select_next = []
+    self.select_next_node.extend(list(face for face in self.pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
     return
 
   def write_pit(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
-      return
-    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
       return
     if self.packet.content_id in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       # PITのコンテンツIDの中に前のノードがない場合，追加する
@@ -161,17 +188,20 @@ class node:  # ノードの情報や処理
   def send_packet(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
-    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
-      return
+    if type(self.packet) is interest_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
+      self.packet.position_node = self
+
     self.packet.living_time += 1
     for sn in self.select_next_node:
       sn.buffer_queue.put(self.packet)
       node.que.put(sn)
+    if type(self.packet) is data_packet:
+      self.buffer_queue.put(self.packet)
+      node.que.put(self)
     self.packet = None
     return
 
-  def packet_protocol(self, nodes):
-    self.get_packet()
+  def interest_packet_protocol(self, nodes):
     # content_storeにコンテンツがあるか確認 -(yes)> pitを元にdataパケットを送信する -> Interestパケットを破棄する
     self.check_have_content()
     # pitに要求されたコンテンツ名があるか確認 -(yes)> pitにInterestパケットを受信したフェイスを追記する -> Interestパケットを廃棄する
@@ -184,6 +214,25 @@ class node:  # ノードの情報や処理
     self.select_next()
     # pitにinterestパケットを受信したフェイスを記入する
     self.write_pit()
+    return
+
+  def data_packet_protocol(self, nodes):
+    # 接続状態を確認
+    self.send_hello(nodes)
+    # 次のノードを選択
+    self.select_next_data()
+    return
+
+  def packet_protocol(self, nodes):
+    # パケットの受信
+    self.get_packet()
+
+    # 受信したパケットの種類によって，プロトコルを変更する
+    if type(self.packet) is interest_packet:
+      self.interest_packet_protocol(nodes)
+    else:
+      self.data_packet_protocol(nodes)
+
     # パケットを転送する
     self.send_packet()
     return

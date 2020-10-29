@@ -1,7 +1,7 @@
 
 
 class packet:
-  def __init__(self, _node, content_id, content_positions=None):
+  def __init__(self, _node, content_id):
     self.living_time = 0  # 生存時間
     self.ttl = 20  # 生存可能時間
     self.content_id = content_id  # コンテンツID
@@ -20,9 +20,9 @@ class interest_packet(packet):
 
 
 class data_packet(packet):
-  def __init__(self, _node, content_id, content_positions=None):
-    super().__init__(_node, content_id, content_positions)
-    self.user_position = None  # ノードのpitを元に経路選択されるため，必要ではない，しかし，最適経路を選択する上では必要かも
-    self.data_size = 0  # コンテンツのデータサイズ
+  def __init__(self, _node, content_id, data_size, user_positions=None):
+    super().__init__(_node, content_id)
+    self.user_positions = user_positions if user_positions else []  # ノードのpitを元に経路選択されるため，必要ではない，しかし，最適経路を選択する上では必要かも
+    self.data_size = data_size  # コンテンツのデータサイズ
     self.data = 0  # パケットのデータサイズ[kbyte]
     self.max_data = 64  # 64[kbyte]
