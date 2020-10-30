@@ -60,6 +60,8 @@ class node:  # ノードの情報や処理
     self.packet = None
     self.select_next_node = []
     self.mtu = 1200  # MTU: Maximum Transfer Unit default 1200[byte]
+    self.received_node = None
+    self.request_content_id = ""
 
   def connect_links(self, nodes):
     self.neighbor = []
@@ -75,14 +77,21 @@ class node:  # ノードの情報や処理
     return
 
   def set_packet(self, want_content, content_positions=None):
-    self.buffer_queue.put(interest_packet(self, want_content, content_positions))
+    interest = interest_packet(want_content, content_positions)
+    self.buffer_queue.put((interest, self))
     node.que.put(self)
     return
 
   def get_packet(self):
     # if self.packet is not None:  # パケットを持っているなら処理を実行しない．　
     #   return
-    self.packet = self.buffer_queue.get()
+    self.packet, self.received_node = self.buffer_queue.get()
+    if type(self.packet) is data_packet and not self.packet.living_time:
+      self.pit[self.packet.content_id] = []
+      self.pit[self.packet.content_id].append(self.received_node)
+    if type(self.packet) is data_packet and self.packet.content_id is self.request_content_id:
+      self.packet.living_time = 255
+      print("コンテンツ{}到着！".format(self.packet.number))
     if self.packet.is_living():  # パケットがTTL以上の場合破棄する
       self.packet = None
     return
@@ -101,9 +110,9 @@ class node:  # ノードの情報や処理
       return
     if self.packet.content_id not in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       return
-    if self.packet.position_node in self.pit[self.packet.content_id]:  # PITのコンテンツIDの中に前のノードがない場合，追加する
+    if self.received_node in self.pit[self.packet.content_id]:  # PITのコンテンツIDの中に前のノードがない場合，追加する
       return
-    self.pit[self.packet.content_id].append(self.packet.position_node)
+    self.pit[self.packet.content_id].append(self.received_node)
     self.packet = None  # Interestパケットを廃棄する
     return
 
@@ -116,9 +125,6 @@ class node:  # ノードの情報や処理
         continue
       if self.position.distance(_node.position) < self.communication_range:
         self.neighbor.append(_node)
-    if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
-      return
-    # self.slime.init_physarum_solver()
     return
 
   def select_next(self):
@@ -142,7 +148,7 @@ class node:  # ノードの情報や処理
     if self.packet.content_id not in self.pit:  # PITにContentIDが含まれている場合
       self.packet = None
       return
-    self.select_next = []
+    self.select_next_node = []
     self.select_next_node.extend(list(face for face in self.pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
     return
 
@@ -161,9 +167,11 @@ class node:  # ノードの情報や処理
     packet_num = self.content_store[content_store_index].data_size / self.mtu
     floor_packet_num = math.floor(packet_num)
     for i in range(floor_packet_num):
-      self.buffer_queue.put(data_packet(self, self.packet.content_id, self.mtu))
-    if not packet_num % 1:
-      self.buffer_queue.put(data_packet(self, self.packet.content_id, packet_num % 1))
+      data = data_packet(self, self.packet.content_id, self.mtu, max_number=floor_packet_num, number=i)
+      self.buffer_queue.put((data, self.received_node))
+    if packet_num % 1:
+      data = data_packet(self, self.packet.content_id, packet_num % 1, max_number=floor_packet_num, number=floor_packet_num)
+      self.buffer_queue.put((data, self.received_node))
     node.que.put(self)
     return
 
@@ -172,25 +180,30 @@ class node:  # ノードの情報や処理
       return
     if self.packet.content_id in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       # PITのコンテンツIDの中に前のノードがない場合，追加する
-      if self.packet.position_node not in self.pit[self.packet.content_id]:
-        self.pit[self.packet.content_id].append(self.packet.position_node)
+      if self.received_node not in self.pit[self.packet.content_id]:
+        self.pit[self.packet.content_id].append(self.received_node)
     else:  # PITにない場合，新しく登録する
       self.pit[self.packet.content_id] = []
-      self.pit[self.packet.content_id].append(self.packet.position_node)
+      self.pit[self.packet.content_id].append(self.received_node)
+    for k, v in self.pit.items():
+      for n in v:
+        print("Content_id:{},Node:{}".format(k, n.number))
     return
 
   def send_packet(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
-    if type(self.packet) is interest_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
-      self.packet.position_node = self
+    flag_send_data_packet = False
+    if type(self.packet) is data_packet:
+      if not self.packet.living_time:
+        print(self.buffer_queue.qsize())
+        flag_send_data_packet = self.packet.max_number is not self.packet.number
 
     self.packet.living_time += 1
     for sn in self.select_next_node:
-      sn.buffer_queue.put(self.packet)
+      sn.buffer_queue.put((self.packet, self))
       node.que.put(sn)
-    if type(self.packet) is data_packet:
-      self.buffer_queue.put(self.packet)
+    if flag_send_data_packet:
       node.que.put(self)
     self.packet = None
     return

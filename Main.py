@@ -85,6 +85,7 @@ def main():
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
   want_content_node = random.randint(0, MAX_NODES)
   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
   fig = plt.figure(figsize=(20, 20))
 
   def animate(i):
@@ -111,6 +112,7 @@ def main():
     while not node.que.empty():
       _node = node.que.get()
       print("Node{} process packet-protocol".format(_node.number))
+      print("Node Que is " + str(node.que.qsize()))
       _node.packet_protocol(nodes)
 
   animate(0)
