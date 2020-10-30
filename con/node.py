@@ -1,9 +1,9 @@
 
 # node: ノードの情報や処理
 from scipy.spatial import distance
-from slime import slime
-from packet import interest_packet
-from packet import data_packet
+from con.slime import slime
+from con.packet import interest_packet
+from con.packet import data_packet
 import random
 import math
 import queue

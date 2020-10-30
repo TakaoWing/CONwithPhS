@@ -11,8 +11,8 @@ import random
 from matplotlib.animation import FuncAnimation
 
 # my classess
-from node import node
-from node import content
+from con.node import node
+from con.node import content
 
 
 def create_nodes(max_nodes):  # ノードの作成
