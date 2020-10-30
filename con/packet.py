@@ -23,6 +23,4 @@ class data_packet(packet):
   def __init__(self, _node, content_id, data_size, user_positions=None):
     super().__init__(_node, content_id)
     self.user_positions = user_positions if user_positions else []  # ノードのpitを元に経路選択されるため，必要ではない，しかし，最適経路を選択する上では必要かも
-    self.data_size = data_size  # コンテンツのデータサイズ
-    self.data = 0  # パケットのデータサイズ[kbyte]
-    self.max_data = 64  # 64[kbyte]
+    self.data_size = data_size  # 自身のデータサイズ [byte]

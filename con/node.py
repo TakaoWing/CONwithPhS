@@ -12,7 +12,7 @@ import queue
 class content:  # コンテンツの情報をまとめたもの
   def __init__(self, content_id, data_size):
     self.content_id = content_id  # コンテンツのid
-    self.data_size = data_size  # データサイズ[kbyte]
+    self.data_size = data_size  # データサイズ[byte]
     self.case_size = 0  # キャッシュサイズ[kbyte]
     self.ttl = 255  # コンテンツの公開時間[s]
     self.packets = math.ceil(self.data_size / 64)  # コンテンツのパケット数
@@ -59,6 +59,7 @@ class node:  # ノードの情報や処理
     self.buffer_queue = queue.Queue()
     self.packet = None
     self.select_next_node = []
+    self.mtu = 1200  # MTU: Maximum Transfer Unit default 1200[byte]
 
   def connect_links(self, nodes):
     self.neighbor = []
@@ -91,13 +92,7 @@ class node:  # ノードの情報や処理
       return
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
-    content_ids = [file.content_id for file in self.content_store]
-    if self.packet.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
-      return
-    # Interestパケットが送信されたFaceに対して，Dataパケットを送信
-    content_store_index = content_ids.index(self.packet.content_id)
-    self.packet.position_node.buffer_queue.put(data_packet(self, self.packet.content_id, self.content_store[content_store_index].data_size))
-    node.que.put(self.packet.position_node)
+    self.fragmentation()  # フラグメンテーションを実行
     self.packet = None  # パケットを破棄する
     return
 
@@ -126,28 +121,6 @@ class node:  # ノードの情報や処理
     # self.slime.init_physarum_solver()
     return
 
-  # def select_next(self):
-  #   if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
-  #     return
-  #   self.select_next_node = []
-  #   if type(self.packet) is data_packet:  # パケットの種類がdata packetなら以下の処理を実行しない
-  #     if self.packet.content_id in self.pit:  # PITにContentIDが含まれている場合
-  #       self.select_next_node.extend(list(face for face in self.pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
-  #     else:
-  #       # if self.packet.position_node not in self.select_next_node:  # PITにInterestパケットが送信されたノードが含まれてない場合
-  #       self.select_next_node.append(self.packet.position_node)  # 次に送信するノードに登録する
-  #   else:
-  #     if self.packet.content_id in self.slimes:
-  #       self.slimes[self.packet.content_id].physarum_solver()
-  #     else:
-  #       self.slimes[self.packet.content_id] = slime(self)
-  #       self.slimes[self.packet.content_id].init_physarum_solver()
-  #     for (k, v) in self.slimes[self.packet.content_id].quantities.items():
-  #       print("{}:{}".format(k.number, v))
-
-  #     self.select_next_node.append(max(self.slimes[self.packet.content_id].quantities, key=self.slimes[self.packet.content_id].quantities.get))
-  #   return
-
   def select_next(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
@@ -171,6 +144,27 @@ class node:  # ノードの情報や処理
       return
     self.select_next = []
     self.select_next_node.extend(list(face for face in self.pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
+    return
+
+  def fragmentation(self):
+    """
+    Fragmentation: フラグメンテーション
+    パケットサイズをネットワークの最大パケットサイズに収まるようにパケットを分割すること
+    分割されたパケットは，自身のパケットキューに登録する．
+    """
+    content_ids = [file.content_id for file in self.content_store]
+    if self.packet.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
+      return
+    # x Interestパケットが送信されたFaceに対して，Dataパケットを送信
+    # o
+    content_store_index = content_ids.index(self.packet.content_id)
+    packet_num = self.content_store[content_store_index].data_size / self.mtu
+    floor_packet_num = math.floor(packet_num)
+    for i in range(floor_packet_num):
+      self.buffer_queue.put(data_packet(self, self.packet.content_id, self.mtu))
+    if not packet_num % 1:
+      self.buffer_queue.put(data_packet(self, self.packet.content_id, packet_num % 1))
+    node.que.put(self)
     return
 
   def write_pit(self):
