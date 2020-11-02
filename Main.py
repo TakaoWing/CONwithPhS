@@ -68,6 +68,18 @@ def get_nodes_name(nodes):  # ノードの名前を辞書型配列で返す
   return dict(zip(nodes, nodes_name))
 
 
+def get_eges_color(edges, edges_communication):
+  edges_color = []
+  for edge_from, edge_to in edges:
+    color = "black"
+    for edge_c_from, edge_c_to in edges_communication:
+      if edge_from is edge_c_from and edge_to is edge_c_to:
+        color = "red"
+    edges_color.append(color)
+
+  return edges_color
+
+
 def nodes_move(nodes):  # nodeの動きをまとめて実装
   for _node in nodes:
     _node.move()
@@ -108,8 +120,22 @@ def main():
     G.add_nodes_from(nodes)
     G.add_edges_from(nodes_link)
 
+    loop_count = node.que.qsize()
+
+    edges_communication = []
+    for c in range(loop_count):
+      _node = node.que.get()
+      print("Node{} process packet-protocol".format(_node.number))
+      _node.packet_protocol(nodes)
+      for n in _node.select_next_node:
+        print("Node{} → Node{}".format(_node.number, n.number))
+        edges_communication.append((_node, n))
+        edges_communication.append((n, _node))
+
+    edges_color = get_eges_color(nodes_link, edges_communication)
+
     nx.draw_networkx_nodes(G, nodes_position, node_size=400, alpha=1, node_color=nodes_color)
-    nx.draw_networkx_edges(G, nodes_position, label=1, edge_color="black", width=2)
+    nx.draw_networkx_edges(G, nodes_position, label=1, edge_color=edges_color, width=2)
     nx.draw_networkx_labels(G, nodes_position, nodes_name, font_size=10, font_color="white")
     plt.axis('off')
     plt.title("t=" + str(i))
@@ -119,15 +145,9 @@ def main():
     # グラフの表示
     # plt.show()
     # nodes_move(nodes)
-    while not node.que.empty():
-      _node = node.que.get()
-      print("Node{} process packet-protocol".format(_node.number))
-      print("Node{} → Node{}".format(_node.number, list(n.number for n in _node.select_next_node)))
-      # print("Node Que is " + str(node.que.qsize()))
-      _node.packet_protocol(nodes)
 
-  animate(0)
-  return
+  # animate(0)
+  # return
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
   anim.save("Export/SaveAnimaiton.gif", writer="imagemagick", fps=fps)
 
