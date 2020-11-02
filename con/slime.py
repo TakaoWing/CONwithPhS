@@ -53,7 +53,7 @@ class slime:
     length_neighbor = self.node.position.distance(neighbor.position)  # length_neighbor:自分自身と接続されたノードまでの距離
 
     theta_neighbor = self.tangent_angle(a, b)
-    length_neighbor_dash = length_neighbor / np.cos(theta_neighbor)  # 自身とneighborまでの投影距離
+    length_neighbor_dash = length_neighbor * np.cos(theta_neighbor)  # 自身とneighborまでの投影距離
     length_neighbor_dash2d = length_d - length_neighbor_dash  # neighorとコンテンツまでの投影距離
     length = length_neighbor_dash2d / length_d + 1e-25
     return length, theta_neighbor

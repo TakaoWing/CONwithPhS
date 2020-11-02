@@ -132,14 +132,15 @@ class node:  # ノードの情報や処理
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
     self.select_next_node = []
-    if self.packet.content_id in self.slimes:
-      self.slimes[self.packet.content_id].physarum_solver()
-    else:
+    if self.packet.content_id not in self.slimes:
       self.slimes[self.packet.content_id] = slime(self)
-      self.slimes[self.packet.content_id].physarum_solver()
+
+    self.slimes[self.packet.content_id].physarum_solver()
+
+    for (k, v) in self.slimes[self.packet.content_id].tubes.items():
+      print("Node {}:{}".format(k.number, vars(v)))
+
     quantities = self.slimes[self.packet.content_id].get_quantities()
-    for (k, v) in quantities.items():
-      print("{}:{}".format(k.number, v))
     self.select_next_node.append(max(quantities, key=quantities.get))
     return
 
