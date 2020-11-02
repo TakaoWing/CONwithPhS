@@ -86,12 +86,13 @@ class node:  # ノードの情報や処理
     # if self.packet is not None:  # パケットを持っているなら処理を実行しない．　
     #   return
     self.packet, self.received_node = self.buffer_queue.get()
+    self.packet.trace.append(self.number)
     if type(self.packet) is data_packet and not self.packet.living_time:
       self.pit[self.packet.content_id] = []
       self.pit[self.packet.content_id].append(self.received_node)
     if type(self.packet) is data_packet and self.packet.content_id is self.request_content_id:
       self.packet.living_time = 255
-      print("コンテンツ{}到着！".format(self.packet.number))
+      print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
     if self.packet.is_living():  # パケットがTTL以上の場合破棄する
       self.packet = None
     return
@@ -135,11 +136,11 @@ class node:  # ノードの情報や処理
       self.slimes[self.packet.content_id].physarum_solver()
     else:
       self.slimes[self.packet.content_id] = slime(self)
-      self.slimes[self.packet.content_id].init_physarum_solver()
-    for (k, v) in self.slimes[self.packet.content_id].quantities.items():
+      self.slimes[self.packet.content_id].physarum_solver()
+    quantities = self.slimes[self.packet.content_id].get_quantities()
+    for (k, v) in quantities.items():
       print("{}:{}".format(k.number, v))
-
-    self.select_next_node.append(max(self.slimes[self.packet.content_id].quantities, key=self.slimes[self.packet.content_id].quantities.get))
+    self.select_next_node.append(max(quantities, key=quantities.get))
     return
 
   def select_next_data(self):

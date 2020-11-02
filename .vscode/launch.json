@@ -16,7 +16,7 @@
             "name": "CON",
             "type": "python",
             "request": "launch",
-            "program": "main.py",
+            "program": "Main.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }
