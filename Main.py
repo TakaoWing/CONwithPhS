@@ -55,7 +55,7 @@ def get_nodes_color(nodes):  # ノードの色をコンテンツを保持して�
   for _node in nodes:
     if len(_node.content_store) != 0:
       nodes_color.append("red")
-    elif _node.packet is not None:
+    elif _node.request_content_id != "":
       nodes_color.append("green")
     else:
       nodes_color.append("blue")
@@ -86,6 +86,16 @@ def main():
   want_content_node = random.randint(0, MAX_NODES)
   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
   nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  want_content_node = 50
+  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  # want_content_node = 71
+  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  # want_content_node = 93
+  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+
   fig = plt.figure(figsize=(20, 20))
 
   def animate(i):
@@ -112,10 +122,12 @@ def main():
     while not node.que.empty():
       _node = node.que.get()
       print("Node{} process packet-protocol".format(_node.number))
+      print("Node{} → Node{}".format(_node.number, list(n.number for n in _node.select_next_node)))
       # print("Node Que is " + str(node.que.qsize()))
       _node.packet_protocol(nodes)
 
   animate(0)
+  return
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
   anim.save("Export/SaveAnimaiton.gif", writer="imagemagick", fps=fps)
 

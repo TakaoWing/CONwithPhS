@@ -7,6 +7,7 @@ from con.packet import data_packet
 import random
 import math
 import queue
+import copy
 
 
 class content:  # コンテンツの情報をまとめたもの
@@ -198,12 +199,11 @@ class node:  # ノードの情報や処理
     flag_send_data_packet = False
     if type(self.packet) is data_packet:
       if not self.packet.living_time:
-        print(self.buffer_queue.qsize())
         flag_send_data_packet = self.packet.max_number is not self.packet.number
 
     self.packet.living_time += 1
     for sn in self.select_next_node:
-      sn.buffer_queue.put((self.packet, self))
+      sn.buffer_queue.put((copy.deepcopy(self.packet), self))
       node.que.put(sn)
     if flag_send_data_packet:
       node.que.put(self)
