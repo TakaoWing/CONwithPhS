@@ -112,7 +112,7 @@ def main():
     while not node.que.empty():
       _node = node.que.get()
       print("Node{} process packet-protocol".format(_node.number))
-      print("Node Que is " + str(node.que.qsize()))
+      # print("Node Que is " + str(node.que.qsize()))
       _node.packet_protocol(nodes)
 
   animate(0)

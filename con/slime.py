@@ -1,6 +1,7 @@
 
 import numpy as np
 from numpy import linalg as LA
+import math
 
 
 class tube:  # ノード間を繋ぐ粘菌のチューブ
@@ -56,7 +57,7 @@ class slime:
     length_neighbor_dash = length_neighbor * np.cos(theta_neighbor)  # 自身とneighborまでの投影距離
     length_neighbor_dash2d = length_d - length_neighbor_dash  # neighorとコンテンツまでの投影距離
     length = length_neighbor_dash2d / length_d + 1e-25
-    return length, theta_neighbor
+    return length, math.degrees(theta_neighbor)
 
   def solve_init_d(self, pressure):
     conductivitiy = (pressure - self.P_MIN) / (self.P_MAX - self.P_MIN)
