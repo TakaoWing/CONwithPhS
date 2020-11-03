@@ -46,6 +46,8 @@ def get_nodes_link(nodes):  # ノード同士が接続関係を配列で返す
   for _node in nodes:
     _node.connect_links(nodes)
     for neighbor in _node.neighbor:
+      if neighbor.number < _node.number:
+        continue
       nodes_link.append((_node, neighbor))
   return nodes_link
 
@@ -72,15 +74,11 @@ def get_eges_color(edges, edges_communication):
   edges_color = []
 
   for edge_from, edge_to in edges:
-    color = "Green"
-    # if edge_to.number == 0:
-    #   color = "Red"
-    # for edge_c_from, edge_c_to in edges_communication:
-    #   if edge_from is edge_c_from and edge_to is edge_c_to:
-    #     color = "red"
-    #     print("{}→{} is Red".format(edge_from.number, edge_to.number))
+    color = "green"
+    for edge_c_from, edge_c_to in edges_communication:
+      if edge_from is edge_c_from and edge_to is edge_c_to:
+        color = "red"
     edges_color.append(color)
-    # print("{}→{}:{}".format(edge_from.number, edge_to.number, color))
 
   return edges_color
 
@@ -134,7 +132,10 @@ def main():
       _node.packet_protocol(nodes)
       for n in _node.select_next_node:
         print("Node{} → Node{}".format(_node.number, n.number))
-        edges_communication.append((_node, n))
+        from_node, to_node = _node, n
+        if from_node.number > to_node.number:
+          from_node, to_node = to_node, from_node
+        edges_communication.append((from_node, to_node))
 
     edges_color = get_eges_color(nodes_link, edges_communication)
 
@@ -144,7 +145,8 @@ def main():
     plt.axis('off')
     plt.title("t=" + str(i))
     # グラフの保存
-    plt.savefig("Export/netork.png")
+    # plt.savefig("Export/netork.png")
+    return
     # グラフの表示
     # plt.show()
     # nodes_move(nodes)
@@ -157,6 +159,6 @@ def main():
 
 if __name__ == "__main__":
   fps = 30
-  t = 20
+  t = 30
   random.seed(0)
   main()
