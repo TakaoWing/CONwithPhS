@@ -70,12 +70,17 @@ def get_nodes_name(nodes):  # ノードの名前を辞書型配列で返す
 
 def get_eges_color(edges, edges_communication):
   edges_color = []
+
   for edge_from, edge_to in edges:
-    color = "black"
-    for edge_c_from, edge_c_to in edges_communication:
-      if edge_from is edge_c_from and edge_to is edge_c_to:
-        color = "red"
+    color = "Green"
+    # if edge_to.number == 0:
+    #   color = "Red"
+    # for edge_c_from, edge_c_to in edges_communication:
+    #   if edge_from is edge_c_from and edge_to is edge_c_to:
+    #     color = "red"
+    #     print("{}→{} is Red".format(edge_from.number, edge_to.number))
     edges_color.append(color)
+    # print("{}→{}:{}".format(edge_from.number, edge_to.number, color))
 
   return edges_color
 
@@ -101,12 +106,12 @@ def main():
   want_content_node = 50
   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
   nodes[want_content_node].request_content_id = "www.google.com/logo.png"
-  # want_content_node = 71
-  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
-  # want_content_node = 93
-  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  want_content_node = 71
+  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  want_content_node = 93
+  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
 
   fig = plt.figure(figsize=(20, 20))
 
@@ -130,7 +135,6 @@ def main():
       for n in _node.select_next_node:
         print("Node{} → Node{}".format(_node.number, n.number))
         edges_communication.append((_node, n))
-        edges_communication.append((n, _node))
 
     edges_color = get_eges_color(nodes_link, edges_communication)
 
@@ -141,7 +145,6 @@ def main():
     plt.title("t=" + str(i))
     # グラフの保存
     plt.savefig("Export/netork.png")
-
     # グラフの表示
     # plt.show()
     # nodes_move(nodes)
