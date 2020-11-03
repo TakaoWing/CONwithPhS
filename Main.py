@@ -74,10 +74,14 @@ def get_eges_color(edges, edges_communication):
   edges_color = []
 
   for edge_from, edge_to in edges:
-    color = "green"
-    for edge_c_from, edge_c_to in edges_communication:
+    color = "black"
+    for edge_c_from, edge_c_to, packet_type in edges_communication:
       if edge_from is edge_c_from and edge_to is edge_c_to:
-        color = "red"
+        if packet_type == "<class 'con.packet.interest_packet'>":
+          color = "green"
+        else:
+          color = "red"
+
     edges_color.append(color)
 
   return edges_color
@@ -99,19 +103,19 @@ def main():
   have_content_node = random.randint(0, MAX_NODES)
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
   want_content_node = random.randint(0, MAX_NODES)
-  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
-  want_content_node = 50
-  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
-  want_content_node = 71
-  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  # want_content_node = 50
+  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  # want_content_node = 71
+  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
   want_content_node = 93
   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
   nodes[want_content_node].request_content_id = "www.google.com/logo.png"
 
-  fig = plt.figure(figsize=(20, 20))
+  fig = plt.figure(figsize=(10, 10))
 
   def animate(i):
     plt.cla()
@@ -124,6 +128,10 @@ def main():
     G.add_edges_from(nodes_link)
 
     loop_count = node.que.qsize()
+    if loop_count == 0:
+      nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+      nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+      loop_count = node.que.qsize()
 
     edges_communication = []
     for c in range(loop_count):
@@ -133,9 +141,10 @@ def main():
       for n in _node.select_next_node:
         print("Node{} → Node{}".format(_node.number, n.number))
         from_node, to_node = _node, n
+        type_packet = _node.packet_type
         if from_node.number > to_node.number:
           from_node, to_node = to_node, from_node
-        edges_communication.append((from_node, to_node))
+        edges_communication.append((from_node, to_node, type_packet))
 
     edges_color = get_eges_color(nodes_link, edges_communication)
 
@@ -144,13 +153,18 @@ def main():
     nx.draw_networkx_labels(G, nodes_position, nodes_name, font_size=10, font_color="white")
     plt.axis('off')
     plt.title("t=" + str(i))
+
     # グラフの保存
     # plt.savefig("Export/netork.png")
-    return
     # グラフの表示
-    # plt.show()
+    # plt.pause(0.001)
+    return
     # nodes_move(nodes)
 
+  # time = 0
+  # while(True):
+  #   animate(time)
+  #   time += 1
   # animate(0)
   # return
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
@@ -159,6 +173,6 @@ def main():
 
 if __name__ == "__main__":
   fps = 30
-  t = 30
+  t = 100
   random.seed(0)
   main()

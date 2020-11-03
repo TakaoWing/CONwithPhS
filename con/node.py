@@ -63,6 +63,7 @@ class node:  # ノードの情報や処理
     self.mtu = 1200  # MTU: Maximum Transfer Unit default 1200[byte]
     self.received_node = None
     self.request_content_id = ""
+    self.packet_type = ""
 
   def connect_links(self, nodes):
     self.neighbor = []
@@ -207,6 +208,7 @@ class node:  # ノードの情報や処理
       node.que.put(sn)
     if flag_send_data_packet:
       node.que.put(self)
+    self.packet_type = str(type(self.packet))
     self.packet = None
     return
 
