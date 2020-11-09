@@ -34,29 +34,57 @@ class slime:
     self.tubes = {}
 
   def tangent_angle(self, u: np.ndarray, v: np.ndarray):
+    """
+    2つのベクトル からなす角を取得する．
+
+    Parameters
+    ----------
+    u : np.ndarray
+      対象のベクトル
+    v : np.ndarray
+      対象のベクトル
+
+    Returns
+    -------
+    なす角（ラジアン）
+    """
     i = np.inner(u, v)
     n = LA.norm(u) * LA.norm(v)
     c = i / n
     return np.arccos(np.clip(c, -1.0, 1.0))  # np.rad2deg(np.arccos(np.clip(c, -1.0, 1.0)))
 
   def solve_length(self, neighbor, length_d):
+    """
+    ノードから隣接ノードまでの長さを計算
 
-    vector_me = self.node.position.get_vector()
-    vector_neighbor = neighbor.position.get_vector()
-    vector_distination = self.node.packet.content_positions.get_vector()
+    Parameters
+    ----------
+    neighbor : node
+      隣接ノード
+    length_d : float
+      ノードからコンテンツ保持端末までの距離
 
-    vector_me2neighbor = list(map(lambda vec1, vec2: vec1 - vec2, vector_me, vector_neighbor))
-    vector_me2d = list(map(lambda vec1, vec2: vec1 - vec2, vector_me, vector_distination))
+    Returns
+    -------
+    length : float
+      ノードから隣接ノードまでの長さ
+    theta_neighbor : float
+      ノードと隣接ノードとコンテンツ保持端末のなす角
+    """
 
-    a = np.array(vector_me2neighbor)
-    b = np.array(vector_me2d)
+    vector_me = self.node.position.get_vector()  # vector_me : 自身のベクトル　memo : 変わらないからここで計算しないこと！
+    vector_neighbor = neighbor.position.get_vector()  # vector_neighbor : 隣接ノードのベクトル
+    vector_distination = self.node.packet.content_positions.get_vector()  # vector_disination : コンテンツ保持端末のベクトル memo : 変わらないからここで計算しないこと！
 
-    length_neighbor = self.node.position.distance(neighbor.position)  # length_neighbor:自分自身と接続されたノードまでの距離
+    vector_me2neighbor = list(map(lambda vec1, vec2: vec1 - vec2, vector_me, vector_neighbor))  # vector_me2neighbor : 自身の座標を原点とした隣接ノードのベクトル
+    vector_me2d = list(map(lambda vec1, vec2: vec1 - vec2, vector_me, vector_distination))  # vector_me2d : 自身の座標を原点としたコンテンツ保持端末のベクトル
+    theta_neighbor = self.tangent_angle(np.array(vector_me2neighbor), np.array(vector_me2d))  # theta_neighbor : vector_me2neighborとvector_me2dのなす角
 
-    theta_neighbor = self.tangent_angle(a, b)
-    length_neighbor_dash = length_neighbor * np.cos(theta_neighbor)  # 自身とneighborまでの投影距離
-    length_neighbor_dash2d = length_d - length_neighbor_dash  # neighorとコンテンツまでの投影距離
-    length = length_neighbor_dash2d / length_d + 1e-25
+    length_neighbor = self.node.position.distance(neighbor.position)  # length_neighbor : 自分自身と隣接ノードまでの距離
+    length_neighbor_dash = length_neighbor * np.cos(theta_neighbor)  # length_neighbor_dash : 自身とコンテンツ保持端末におけるneighborの投影距離
+    length_neighbor_dash2d = length_d - length_neighbor_dash  # length_neighbor_dash2d : neighorとコンテンツまでの投影距離
+    length = length_neighbor_dash2d / length_d + 1e-25  # length : ノードと隣接ノードの距離 1e-25はゼロ除算対策
+
     return length, math.degrees(theta_neighbor)
 
   def solve_init_d(self, pressure):
@@ -78,12 +106,6 @@ class slime:
   def solve_q(self, conductivity, pressure, length):
     quantity = conductivity * pressure / length
     return quantity
-
-  # def init_physarum_solver(self):
-  #   length_d = self.node.position.distance(self.node.packet.content_positions)  # length_d:自分自身とコンテンツ保持端末までの距離
-  #   for neighbor in self.node.neighbor:  # neighbor:接続されたノード
-
-  #   return
 
   def init_tube(self, neighbor, length_d):
     _tube = tube()
