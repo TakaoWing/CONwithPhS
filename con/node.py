@@ -64,6 +64,7 @@ class node:  # ノードの情報や処理
     self.received_node = None
     self.request_content_id = ""
     self.packet_type = ""
+    self.flatting_request_content_ids = []  # コンテンツ要求端末とコンテンツid
 
   def connect_links(self, nodes):
     self.neighbor = []
@@ -79,16 +80,18 @@ class node:  # ノードの情報や処理
     return
 
   def set_packet(self, want_content, content_positions=None):
+    self.request_content_id = want_content
     interest = interest_packet(want_content, content_positions)
     self.buffer_queue.put((interest, self))
     node.que.put(self)
     return
 
   def get_packet(self):
-    # if self.packet is not None:  # パケットを持っているなら処理を実行しない．　
-    #   return
     self.packet, self.received_node = self.buffer_queue.get()
     self.packet.trace.append(self.number)
+    if type(self.packet) is interest_packet and self.packet.content_id in self.flatting_request_content_ids:
+      self.packet = None
+      return
     if type(self.packet) is data_packet and not self.packet.living_time:
       self.pit[self.packet.content_id] = []
       self.pit[self.packet.content_id].append(self.received_node)
@@ -134,6 +137,11 @@ class node:  # ノードの情報や処理
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
     self.select_next_node = []
+
+    if not self.packet.content_positions:  # コンテンツ保持端末の場所を知らない場合
+      self.select_next_node.extend(self.neighbor)  # 隣接ノードにInterestパケットを送信する
+      return
+
     if self.packet.content_id not in self.slimes:
       self.slimes[self.packet.content_id] = slime(self)
 
@@ -182,6 +190,8 @@ class node:  # ノードの情報や処理
   def write_pit(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
+    # if not self.packet.content_positions:  # コンテンツ保持端末を知らない場合以下の処理を行わない
+    #   return
     if self.packet.content_id in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       # PITのコンテンツIDの中に前のノードがない場合，追加する
       if self.received_node not in self.pit[self.packet.content_id]:
@@ -197,10 +207,14 @@ class node:  # ノードの情報や処理
   def send_packet(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
+
     flag_send_data_packet = False
-    if type(self.packet) is data_packet:
+    if type(self.packet) is data_packet:  # パケットがdataパケットの時
       if not self.packet.living_time:
         flag_send_data_packet = self.packet.max_number is not self.packet.number
+    else:  # パケットがinterestパケットの時
+      if not self.packet.content_positions:  # パケットがコンテンツの場所を知らない場合
+        self.flatting_request_content_ids.append((self, self.packet.content_id))
 
     self.packet.living_time += 1
     for sn in self.select_next_node:

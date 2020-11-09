@@ -90,6 +90,11 @@ def get_eges_color(edges, edges_communication):
 def nodes_move(nodes):  # nodeの動きをまとめて実装
   for _node in nodes:
     _node.move()
+  return
+
+
+def flatting(nodes):
+  return
 
 
 def main():
@@ -104,16 +109,13 @@ def main():
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
   want_content_node = random.randint(0, MAX_NODES)
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
   # want_content_node = 50
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
   # want_content_node = 71
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  # nodes[want_content_node].request_content_id = "www.google.com/logo.png"
   want_content_node = 93
-  nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  nodes[want_content_node].request_content_id = "www.google.com/logo.png"
+  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position) # すでにコンテンツの位置を知っている場合
+  nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
 
   fig = plt.figure(figsize=(10, 10))
 
@@ -128,10 +130,9 @@ def main():
     G.add_edges_from(nodes_link)
 
     loop_count = node.que.qsize()
-    if loop_count == 0:
-      nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-      nodes[want_content_node].request_content_id = "www.google.com/logo.png"
-      loop_count = node.que.qsize()
+    # if loop_count == 0: # コンテンツが全て到着時，再びコンテンツを要求
+    #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+    #   loop_count = node.que.qsize()
 
     edges_communication = []
     for c in range(loop_count):
@@ -155,7 +156,7 @@ def main():
     plt.title("t=" + str(i))
 
     # グラフの保存
-    # plt.savefig("Export/netork.png")
+    plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
     return
