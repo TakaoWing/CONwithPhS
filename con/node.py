@@ -3,6 +3,7 @@
 from scipy.spatial import distance
 from con.slime import slime
 from con.packet import interest_packet
+from con.packet import request_packet
 from con.packet import data_packet
 import random
 import math
@@ -53,6 +54,7 @@ class node:  # ノードの情報や処理
     self.buffer = 1
     self.content_store = []
     self.pit = {}
+    self.f_pit = {}
     self.fib = {}
     self.slimes = {}
     self.communication_range = 60
@@ -64,7 +66,7 @@ class node:  # ノードの情報や処理
     self.received_node = None
     self.request_content_id = ""
     self.packet_type = ""
-    self.flatting_request_content_ids = []  # コンテンツ要求端末とコンテンツid
+    self.flatting_request_packet = []
 
   def connect_links(self, nodes):
     self.neighbor = []
@@ -89,15 +91,22 @@ class node:  # ノードの情報や処理
   def get_packet(self):
     self.packet, self.received_node = self.buffer_queue.get()
     self.packet.trace.append(self.number)
-    if type(self.packet) is interest_packet and self.packet.content_id in self.flatting_request_content_ids:
+    if type(self.packet) is interest_packet and self.packet.randam_bin in list(_packet.randam_bin for _packet in self.flatting_request_packet):
       self.packet = None
       return
+    if type(self.packet) is request_packet and not self.packet.living_time:
+      self.f_pit[self.packet.content_id] = []
+      self.f_pit[self.packet.content_id].append(self.received_node)
     if type(self.packet) is data_packet and not self.packet.living_time:
       self.pit[self.packet.content_id] = []
       self.pit[self.packet.content_id].append(self.received_node)
     if type(self.packet) is data_packet and self.packet.content_id is self.request_content_id:
       self.packet.living_time = 255
       print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
+    if type(self.packet) is request_packet and self.packet.content_id is self.request_content_id:
+      self.packet.living_time = 255
+      print("リクエス到着！経路{}".format(self.packet.trace))
+      self.set_packet(self.packet.content_id, self.packet.content_position)
     if self.packet.is_living():  # パケットがTTL以上の場合破棄する
       self.packet = None
     return
@@ -107,12 +116,44 @@ class node:  # ノードの情報や処理
       return
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
-    self.fragmentation()  # フラグメンテーションを実行
+    if self.packet.content_id not in list(_content.content_id for _content in self.content_store):  # コンテンツストアにコンテンツIDを持ったコンテンツがない場合以下の処理を実行しない
+      return
+    if self.packet.content_positions:  # コンテンツ保持端末の場所を知っている場合
+      self.fragmentation()  # フラグメンテーションを実行
+    else:  # コンテンツ保持端末の場所を知らない場合，
+      self.flatting_request_packet.append(self.packet)
+      request = request_packet(self.packet.content_id, self.position)
+      self.buffer_queue.put((request, self.received_node))
     self.packet = None  # パケットを破棄する
+    return
+
+  def fragmentation(self):
+    """
+    Fragmentation: フラグメンテーション
+    パケットサイズをネットワークの最大パケットサイズに収まるようにパケットを分割すること
+    分割されたパケットは，自身のパケットキューに登録する．
+    """
+    content_ids = [file.content_id for file in self.content_store]
+    if self.packet.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
+      return
+    # x Interestパケットが送信されたFaceに対して，Dataパケットを送信
+    # o
+    content_store_index = content_ids.index(self.packet.content_id)
+    packet_num = self.content_store[content_store_index].data_size / self.mtu
+    floor_packet_num = math.floor(packet_num)
+    for i in range(floor_packet_num):
+      data = data_packet(self, self.packet.content_id, self.mtu, max_number=floor_packet_num, number=i)
+      self.buffer_queue.put((data, self.received_node))
+    if packet_num % 1:
+      data = data_packet(self, self.packet.content_id, packet_num % 1, max_number=floor_packet_num, number=floor_packet_num)
+      self.buffer_queue.put((data, self.received_node))
+    node.que.put(self)
     return
 
   def check_have_pit(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
+    if not self.packet.content_positions:  # コンテンツ保持端末の場所を知らない場合
       return
     if self.packet.content_id not in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       return
@@ -164,42 +205,33 @@ class node:  # ノードの情報や処理
     self.select_next_node.extend(list(face for face in self.pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
     return
 
-  def fragmentation(self):
-    """
-    Fragmentation: フラグメンテーション
-    パケットサイズをネットワークの最大パケットサイズに収まるようにパケットを分割すること
-    分割されたパケットは，自身のパケットキューに登録する．
-    """
-    content_ids = [file.content_id for file in self.content_store]
-    if self.packet.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
+  def select_next_request(self):
+    if self.packet is None:
       return
-    # x Interestパケットが送信されたFaceに対して，Dataパケットを送信
-    # o
-    content_store_index = content_ids.index(self.packet.content_id)
-    packet_num = self.content_store[content_store_index].data_size / self.mtu
-    floor_packet_num = math.floor(packet_num)
-    for i in range(floor_packet_num):
-      data = data_packet(self, self.packet.content_id, self.mtu, max_number=floor_packet_num, number=i)
-      self.buffer_queue.put((data, self.received_node))
-    if packet_num % 1:
-      data = data_packet(self, self.packet.content_id, packet_num % 1, max_number=floor_packet_num, number=floor_packet_num)
-      self.buffer_queue.put((data, self.received_node))
-    node.que.put(self)
+    if self.packet.content_id not in self.f_pit:  # PITにContentIDが含まれている場合
+      self.packet = None
+      return
+    self.select_next_node = []
+    self.select_next_node.extend(list(face for face in self.f_pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
     return
 
   def write_pit(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
-    # if not self.packet.content_positions:  # コンテンツ保持端末を知らない場合以下の処理を行わない
-    #   return
-    if self.packet.content_id in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
+    table = {}
+    if not self.packet.content_positions:  # コンテンツ保持端末を知らない場合
+      table = self.f_pit
+    else:
+      table = self.pit
+
+    if self.packet.content_id in table:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       # PITのコンテンツIDの中に前のノードがない場合，追加する
-      if self.received_node not in self.pit[self.packet.content_id]:
-        self.pit[self.packet.content_id].append(self.received_node)
+      if self.received_node not in table[self.packet.content_id]:
+        table[self.packet.content_id].append(self.received_node)
     else:  # PITにない場合，新しく登録する
-      self.pit[self.packet.content_id] = []
-      self.pit[self.packet.content_id].append(self.received_node)
-    for k, v in self.pit.items():
+      table[self.packet.content_id] = []
+      table[self.packet.content_id].append(self.received_node)
+    for k, v in table.items():
       for n in v:
         print("Content_id:{},Node:{}".format(k, n.number))
     return
@@ -212,9 +244,9 @@ class node:  # ノードの情報や処理
     if type(self.packet) is data_packet:  # パケットがdataパケットの時
       if not self.packet.living_time:
         flag_send_data_packet = self.packet.max_number is not self.packet.number
-    else:  # パケットがinterestパケットの時
+    elif type(self.packet) is interest_packet:  # パケットがinterestパケットの時
       if not self.packet.content_positions:  # パケットがコンテンツの場所を知らない場合
-        self.flatting_request_content_ids.append((self, self.packet.content_id))
+        self.flatting_request_packet.append(self.packet)
 
     self.packet.living_time += 1
     for sn in self.select_next_node:
@@ -248,6 +280,13 @@ class node:  # ノードの情報や処理
     self.select_next_data()
     return
 
+  def request_packet_protocol(self, nodes):
+    # 接続状態を確認
+    self.send_hello(nodes)
+    # 次のノードを選択
+    self.select_next_request()
+    return
+
   def packet_protocol(self, nodes):
     # パケットの受信
     self.get_packet()
@@ -255,8 +294,10 @@ class node:  # ノードの情報や処理
     # 受信したパケットの種類によって，プロトコルを変更する
     if type(self.packet) is interest_packet:
       self.interest_packet_protocol(nodes)
-    else:
+    elif type(self.packet) is data_packet:
       self.data_packet_protocol(nodes)
+    else:
+      self.request_packet_protocol(nodes)
 
     # パケットを転送する
     self.send_packet()

@@ -1,3 +1,4 @@
+import random
 
 
 class packet:
@@ -6,6 +7,7 @@ class packet:
     self.ttl = 20  # 生存可能時間
     self.content_id = content_id  # コンテンツID
     self.trace = []  # 辿った経路
+    self.randam_bin = format(random.randint(0, 255), '08b')
 
   def is_living(self):
     print("packet::ContentID:{},TTL:{}".format(self.content_id, self.living_time))
@@ -18,8 +20,14 @@ class interest_packet(packet):
     self.content_positions = content_positions if content_positions else []  # コンテンツを保存しているノード
 
 
+class request_packet(packet):
+  def __init__(self, content_id, content_position=None):
+    super().__init__(content_id)
+    self.content_position = content_position
+
+
 class data_packet(packet):
-  def __init__(self, _node, content_id, data_size, max_number, number, user_positions=None):
+  def __init__(self, _node, content_id, data_size=None, max_number=None, number=None, user_positions=None):
     super().__init__(content_id)
     self.user_positions = user_positions if user_positions else []  # ノードのpitを元に経路選択されるため，必要ではない，しかし，最適経路を選択する上では必要かも
     self.data_size = data_size  # 自身のデータサイズ [byte]
