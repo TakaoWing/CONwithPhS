@@ -124,6 +124,7 @@ class node:  # ノードの情報や処理
       self.flatting_request_packet.append(self.packet)
       request = request_packet(self.packet.content_id, self.position)
       self.buffer_queue.put((request, self.received_node))
+      node.que.put(self)
     self.packet = None  # パケットを破棄する
     return
 

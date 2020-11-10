@@ -156,7 +156,7 @@ def main():
     plt.title("t=" + str(i))
 
     # グラフの保存
-    plt.savefig("Export/netork.png")
+    # plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
     return
