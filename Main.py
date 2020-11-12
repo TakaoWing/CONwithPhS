@@ -79,8 +79,12 @@ def get_eges_color(edges, edges_communication):
       if edge_from is edge_c_from and edge_to is edge_c_to:
         if packet_type == "<class 'con.packet.interest_packet'>":
           color = "green"
-        else:
+        elif packet_type == "<class 'con.packet.data_packet'>":
           color = "red"
+        elif packet_type == "<class 'con.packet.slime_interest_packet'>":
+          color = "orange"
+        elif packet_type == "<class 'con.packet.slime_data_packet'>":
+          color = "pink"
 
     edges_color.append(color)
 
@@ -107,12 +111,16 @@ def main():
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = random.randint(0, MAX_NODES)
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
-  want_content_node = random.randint(0, MAX_NODES)
+  # have_content_node = 63
+  # nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo2.png", data_size=10000))
+  # want_content_node = random.randint(0, MAX_NODES)
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  # want_content_node = 47
+  # nodes[want_content_node].set_packet("www.google.com/logo2.png")
   # want_content_node = 50
-  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-  # want_content_node = 71
-  # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+  # nodes[want_content_node].set_packet("www.google.com/logo.png")
+  want_content_node = 71
+  nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 93
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)  # すでにコンテンツの位置を知っている場合
   nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
@@ -129,14 +137,17 @@ def main():
     G.add_nodes_from(nodes)
     G.add_edges_from(nodes_link)
 
-    loop_count = node.que.qsize()
+    # loop_count = node.que.qsize()
+    # print(list(_n.number for _n in node.que.queue))
+
     # if loop_count == 0: # コンテンツが全て到着時，再びコンテンツを要求
     #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
     #   loop_count = node.que.qsize()
 
     edges_communication = []
-    for c in range(loop_count):
-      _node = node.que.get()
+    for _node in nodes:
+      if not _node.buffer_queue.qsize():
+        continue
       print("Node{} process packet-protocol".format(_node.number))
       _node.packet_protocol(nodes)
       for n in _node.select_next_node:
@@ -146,6 +157,17 @@ def main():
         if from_node.number > to_node.number:
           from_node, to_node = to_node, from_node
         edges_communication.append((from_node, to_node, type_packet))
+    # for c in range(loop_count):
+    #   _node = node.que.get()
+    #   print("Node{} process packet-protocol".format(_node.number))
+    #   _node.packet_protocol(nodes)
+    #   for n in _node.select_next_node:
+    #     print("Node{} → Node{}".format(_node.number, n.number))
+    #     from_node, to_node = _node, n
+    #     type_packet = _node.packet_type
+    #     if from_node.number > to_node.number:
+    #       from_node, to_node = to_node, from_node
+    #     edges_communication.append((from_node, to_node, type_packet))
 
     edges_color = get_eges_color(nodes_link, edges_communication)
 
@@ -156,9 +178,10 @@ def main():
     plt.title("t=" + str(i))
 
     # グラフの保存
-    # plt.savefig("Export/netork.png")
+    plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
+    # nodes_move(nodes)
     return
     # nodes_move(nodes)
 

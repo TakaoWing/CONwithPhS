@@ -2,9 +2,7 @@
 # node: ノードの情報や処理
 from scipy.spatial import distance
 from con.slime import slime
-from con.packet import interest_packet
-from con.packet import request_packet
-from con.packet import data_packet
+from con.packet import interest_packet, data_packet, slime_interest_packet, slime_data_packet
 import random
 import math
 import queue
@@ -36,8 +34,9 @@ class position:
     return self.vector
 
   def move(self):
-    self.x += random.uniform(-1, 1)
-    self.y += random.uniform(-1, 1)
+    speed = 0.01
+    self.x += random.uniform(-speed, speed)
+    self.y += random.uniform(-speed, speed)
 
   def distance(self, other_position):
     return distance.euclidean(self.get_vector(), other_position.get_vector())
@@ -83,32 +82,47 @@ class node:  # ノードの情報や処理
 
   def set_packet(self, want_content, content_positions=None):
     self.request_content_id = want_content
-    interest = interest_packet(want_content, content_positions)
+
+    if content_positions:  # コンテンツ情報があるかどうかで生成するパケットの種類を変更
+      interest = interest_packet(want_content, content_positions)
+    else:
+      interest = slime_interest_packet(want_content)
+
     self.buffer_queue.put((interest, self))
     node.que.put(self)
     return
 
   def get_packet(self):
-    self.packet, self.received_node = self.buffer_queue.get()
-    self.packet.trace.append(self.number)
-    if type(self.packet) is interest_packet and self.packet.randam_bin in list(_packet.randam_bin for _packet in self.flatting_request_packet):
+    self.packet, self.received_node = self.buffer_queue.get()  # バッファキューからパケットと送られてきたノードを展開
+    self.packet.trace.append(self.number)  # パケットの経路に自信の番号を追加
+
+    type_packet = type(self.packet)
+
+    if type_packet is interest_packet:  # interestパケットの時
+      if self.packet.randam_bin in list(_packet.randam_bin for _packet in self.flatting_request_packet):
+        self.packet.living_time = 255
+    elif type_packet is data_packet:  # dataパケットの時
+      if not self.packet.living_time:  # パケットが生成されたばかりの時
+        self.pit[self.packet.content_id] = []
+        self.pit[self.packet.content_id].append(self.received_node)
+      if self.packet.content_id is self.request_content_id:  # パケットがコンテンツ要求端末に到達した場合
+        self.packet.living_time = 255
+        print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
+    elif type_packet is slime_interest_packet:  # slime-interestパケットの時
+      if self.packet.randam_bin in list(_packet.randam_bin for _packet in self.flatting_request_packet):
+        self.packet.living_time = 255
+    elif type_packet is slime_data_packet:  # slime-dataパケットの時
+      if not self.packet.living_time:  # パケットが生成されたばかりの時
+        self.f_pit[self.packet.content_id] = []
+        self.f_pit[self.packet.content_id].append(self.received_node)
+      if self.packet.content_id is self.request_content_id:  # パケットがコンテンツ要求端末に到達した場合
+        self.packet.living_time = 255
+        print("リクエス到着！経路{}".format(self.packet.trace))
+        self.set_packet(self.packet.content_id, self.packet.content_position)
+
+    if self.packet.is_living():
       self.packet = None
-      return
-    if type(self.packet) is request_packet and not self.packet.living_time:
-      self.f_pit[self.packet.content_id] = []
-      self.f_pit[self.packet.content_id].append(self.received_node)
-    if type(self.packet) is data_packet and not self.packet.living_time:
-      self.pit[self.packet.content_id] = []
-      self.pit[self.packet.content_id].append(self.received_node)
-    if type(self.packet) is data_packet and self.packet.content_id is self.request_content_id:
-      self.packet.living_time = 255
-      print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
-    if type(self.packet) is request_packet and self.packet.content_id is self.request_content_id:
-      self.packet.living_time = 255
-      print("リクエス到着！経路{}".format(self.packet.trace))
-      self.set_packet(self.packet.content_id, self.packet.content_position)
-    if self.packet.is_living():  # パケットがTTL以上の場合破棄する
-      self.packet = None
+
     return
 
   def check_have_content(self):
@@ -118,13 +132,23 @@ class node:  # ノードの情報や処理
       return
     if self.packet.content_id not in list(_content.content_id for _content in self.content_store):  # コンテンツストアにコンテンツIDを持ったコンテンツがない場合以下の処理を実行しない
       return
-    if self.packet.content_positions:  # コンテンツ保持端末の場所を知っている場合
-      self.fragmentation()  # フラグメンテーションを実行
-    else:  # コンテンツ保持端末の場所を知らない場合，
-      self.flatting_request_packet.append(self.packet)
-      request = request_packet(self.packet.content_id, self.position)
-      self.buffer_queue.put((request, self.received_node))
-      node.que.put(self)
+    self.fragmentation()  # フラグメンテーションを実行
+    self.packet = None  # パケットを破棄する
+    return
+
+  def check_have_content_slime(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
+    if not self.content_store:  # コンテンツストアが空の場合，終了
+      return
+    if self.packet.content_id not in list(_content.content_id for _content in self.content_store):  # コンテンツストアにコンテンツIDを持ったコンテンツがない場合以下の処理を実行しない
+      return
+
+    self.flatting_request_packet.append(self.packet)
+    request = slime_data_packet(self.packet.content_id, self.position)
+    self.buffer_queue.put((request, self.received_node))
+    node.que.put(self)
+
     self.packet = None  # パケットを破棄する
     return
 
@@ -180,10 +204,6 @@ class node:  # ノードの情報や処理
       return
     self.select_next_node = []
 
-    if not self.packet.content_positions:  # コンテンツ保持端末の場所を知らない場合
-      self.select_next_node.extend(self.neighbor)  # 隣接ノードにInterestパケットを送信する
-      return
-
     if self.packet.content_id not in self.slimes:
       self.slimes[self.packet.content_id] = slime(self)
 
@@ -196,6 +216,15 @@ class node:  # ノードの情報や処理
     self.select_next_node.append(max(quantities, key=quantities.get))
     return
 
+  def select_next_slime(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
+    self.select_next_node = []
+    self.select_next_node.extend(self.neighbor)  # 隣接ノードにInterestパケットを送信する
+    if self.received_node in self.select_next_node:  # 送られてきたノードが次に送るリストにある場合
+      self.select_next_node.remove(self.received_node)  # 送られてきたノードに対して，パケットを送信しない
+    return
+
   def select_next_data(self):
     if self.packet is None:
       return
@@ -203,38 +232,52 @@ class node:  # ノードの情報や処理
       self.packet = None
       return
     self.select_next_node = []
-    self.select_next_node.extend(list(face for face in self.pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
+    self.select_next_node.extend(self.pit[self.packet.content_id])  # Dataパケットを送信するノードにPITのContentIDに紐づいているFaceをすべて登録する
     return
 
-  def select_next_request(self):
+  def select_next_slime_data(self):
     if self.packet is None:
       return
     if self.packet.content_id not in self.f_pit:  # PITにContentIDが含まれている場合
       self.packet = None
       return
     self.select_next_node = []
-    self.select_next_node.extend(list(face for face in self.f_pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのCOntentIDに紐づいているFaceをすべて登録する
+    self.select_next_node.extend(list(face for face in self.f_pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのContentIDに紐づいているFaceをすべて登録する
+    del self.f_pit[self.packet.content_id]
     return
 
   def write_pit(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
-    table = {}
-    if not self.packet.content_positions:  # コンテンツ保持端末を知らない場合
-      table = self.f_pit
-    else:
-      table = self.pit
 
-    if self.packet.content_id in table:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
+    if self.packet.content_id in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       # PITのコンテンツIDの中に前のノードがない場合，追加する
-      if self.received_node not in table[self.packet.content_id]:
-        table[self.packet.content_id].append(self.received_node)
+      if self.received_node not in self.pit[self.packet.content_id]:
+        self.pit[self.packet.content_id].append(self.received_node)
     else:  # PITにない場合，新しく登録する
-      table[self.packet.content_id] = []
-      table[self.packet.content_id].append(self.received_node)
-    for k, v in table.items():
+      self.pit[self.packet.content_id] = []
+      self.pit[self.packet.content_id].append(self.received_node)
+
+    for k, v in self.pit.items():
       for n in v:
-        print("Content_id:{},Node:{}".format(k, n.number))
+        print("table_name:self.pit,Content_id:{},Node:{}".format(k, n.number))
+    return
+
+  def write_pit_slime(self):
+    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
+      return
+
+    if self.packet.content_id in self.f_pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
+      # PITのコンテンツIDの中に前のノードがない場合，追加する
+      if self.received_node not in self.f_pit[self.packet.content_id]:
+        self.f_pit[self.packet.content_id].append(self.received_node)
+    else:  # PITにない場合，新しく登録する
+      self.f_pit[self.packet.content_id] = []
+      self.f_pit[self.packet.content_id].append(self.received_node)
+
+    for k, v in self.f_pit.items():
+      for n in v:
+        print("table_name:f_pit,Content_id:{},Node:{}".format(k, n.number))
     return
 
   def send_packet(self):
@@ -245,9 +288,8 @@ class node:  # ノードの情報や処理
     if type(self.packet) is data_packet:  # パケットがdataパケットの時
       if not self.packet.living_time:
         flag_send_data_packet = self.packet.max_number is not self.packet.number
-    elif type(self.packet) is interest_packet:  # パケットがinterestパケットの時
-      if not self.packet.content_positions:  # パケットがコンテンツの場所を知らない場合
-        self.flatting_request_packet.append(self.packet)
+    elif type(self.packet) is slime_interest_packet:  # パケットがinterestパケットの時
+      self.flatting_request_packet.append(self.packet)
 
     self.packet.living_time += 1
     for sn in self.select_next_node:
@@ -281,24 +323,42 @@ class node:  # ノードの情報や処理
     self.select_next_data()
     return
 
-  def request_packet_protocol(self, nodes):
+  def slime_interest_packet_protocol(self, nodes):
+    # content_storeにコンテンツがあるか確認 -(yes)> pitを元にdataパケットを送信する -> Interestパケットを破棄する
+    self.check_have_content_slime()
     # 接続状態を確認
     self.send_hello(nodes)
     # 次のノードを選択
-    self.select_next_request()
+    self.select_next_slime()
+    # pitにinterestパケットを受信したフェイスを記入する
+    self.write_pit_slime()
+    return
+
+  def slime_data_packet_protocol(self, nodes):
+    # 接続状態を確認
+    self.send_hello(nodes)
+    # 次のノードを選択
+    self.select_next_slime_data()
     return
 
   def packet_protocol(self, nodes):
     # パケットの受信
     self.get_packet()
 
+    if self.packet is None:  # パケットが破棄されている場合
+      return  # プロトコルを終了する
+
+    type_packet = type(self.packet)
+
     # 受信したパケットの種類によって，プロトコルを変更する
-    if type(self.packet) is interest_packet:
+    if type_packet is interest_packet:  # interestパケットの時
       self.interest_packet_protocol(nodes)
-    elif type(self.packet) is data_packet:
+    elif type_packet is data_packet:  # dataパケットの時
       self.data_packet_protocol(nodes)
-    else:
-      self.request_packet_protocol(nodes)
+    elif type_packet is slime_interest_packet:  # slime-interestパケットの時
+      self.slime_interest_packet_protocol(nodes)
+    elif type_packet is slime_data_packet:  # slime-dataパケットの時
+      self.slime_data_packet_protocol(nodes)
 
     # パケットを転送する
     self.send_packet()
