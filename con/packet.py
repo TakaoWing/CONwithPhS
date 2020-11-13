@@ -17,6 +17,9 @@ class packet:
     print("packet::ContentID:{},TTL:{}".format(self.content_id, self.living_time))
     return self.living_time > self.ttl
 
+  def get_fpit_index(self):
+    return (self.content_id, self.randam_bin)
+
 
 class interest_packet(packet):
   """
@@ -61,6 +64,7 @@ class slime_data_packet(packet):
   コンテンツ保持端末の位置情報を持っている
   """
 
-  def __init__(self, content_id, content_position=None):
+  def __init__(self, content_id, content_position, randam_bin):
     super().__init__(content_id)
     self.content_position = content_position
+    self.randam_bin = randam_bin

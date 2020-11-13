@@ -113,8 +113,9 @@ class node:  # ノードの情報や処理
         self.packet.living_time = 255
     elif type_packet is slime_data_packet:  # slime-dataパケットの時
       if not self.packet.living_time:  # パケットが生成されたばかりの時
-        self.f_pit[self.packet.content_id] = []
-        self.f_pit[self.packet.content_id].append(self.received_node)
+        fpit_index = self.packet.get_fpit_index()
+        self.f_pit[fpit_index] = []
+        self.f_pit[fpit_index].append(self.received_node)
       if self.packet.content_id is self.request_content_id:  # パケットがコンテンツ要求端末に到達した場合
         self.packet.living_time = 255
         print("リクエス到着！経路{}".format(self.packet.trace))
@@ -145,7 +146,7 @@ class node:  # ノードの情報や処理
       return
 
     self.flatting_request_packet.append(self.packet)
-    request = slime_data_packet(self.packet.content_id, self.position)
+    request = slime_data_packet(self.packet.content_id, self.position, self.packet.randam_bin)
     self.buffer_queue.put((request, self.received_node))
     node.que.put(self)
 
@@ -238,12 +239,13 @@ class node:  # ノードの情報や処理
   def select_next_slime_data(self):
     if self.packet is None:
       return
-    if self.packet.content_id not in self.f_pit:  # PITにContentIDが含まれている場合
+    fpit_index = self.packet.get_fpit_index()
+    if fpit_index not in self.f_pit:  # PITにContentIDが含まれている場合
       self.packet = None
       return
     self.select_next_node = []
-    self.select_next_node.extend(list(face for face in self.f_pit[self.packet.content_id]))  # Dataパケットを送信するノードにPITのContentIDに紐づいているFaceをすべて登録する
-    del self.f_pit[self.packet.content_id]
+    self.select_next_node.extend(list(face for face in self.f_pit[fpit_index]))  # Dataパケットを送信するノードにPITのContentIDに紐づいているFaceをすべて登録する
+    del self.f_pit[fpit_index]
     return
 
   def write_pit(self):
@@ -267,13 +269,14 @@ class node:  # ノードの情報や処理
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
 
-    if self.packet.content_id in self.f_pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
+    fpit_index = self.packet.get_fpit_index()
+    if fpit_index in self.f_pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
       # PITのコンテンツIDの中に前のノードがない場合，追加する
-      if self.received_node not in self.f_pit[self.packet.content_id]:
-        self.f_pit[self.packet.content_id].append(self.received_node)
+      if self.received_node not in self.f_pit[fpit_index]:
+        self.f_pit[fpit_index].append(self.received_node)
     else:  # PITにない場合，新しく登録する
-      self.f_pit[self.packet.content_id] = []
-      self.f_pit[self.packet.content_id].append(self.received_node)
+      self.f_pit[fpit_index] = []
+      self.f_pit[fpit_index].append(self.received_node)
 
     for k, v in self.f_pit.items():
       for n in v:

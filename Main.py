@@ -121,9 +121,9 @@ def main():
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 71
   nodes[want_content_node].set_packet("www.google.com/logo.png")
-  # want_content_node = 93
+  want_content_node = 93
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)  # すでにコンテンツの位置を知っている場合
-  # nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
+  nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
 
   fig = plt.figure(figsize=(10, 10))
 
