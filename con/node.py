@@ -63,7 +63,8 @@ class node:  # ノードの情報や処理
     self.select_next_node = []
     self.mtu = 1200  # MTU: Maximum Transfer Unit default 1200[byte]
     self.received_node = None
-    self.request_content_id = ""
+    self.request_content = {}  # request_content: {content_id,data_size}
+    self.get_content_time = {}
     self.packet_type = ""
     self.flatting_request_packet = []
 
@@ -81,7 +82,7 @@ class node:  # ノードの情報や処理
     return
 
   def set_packet(self, want_content, content_positions=None):
-    self.request_content_id = want_content
+    self.request_content[want_content] = 0
 
     if content_positions:  # コンテンツ情報があるかどうかで生成するパケットの種類を変更
       interest = interest_packet(want_content, content_positions)
@@ -92,7 +93,7 @@ class node:  # ノードの情報や処理
     node.que.put(self)
     return
 
-  def get_packet(self):
+  def get_packet(self, time=None):
     self.packet, self.received_node = self.buffer_queue.get()  # バッファキューからパケットと送られてきたノードを展開
     self.packet.trace.append(self.number)  # パケットの経路に自信の番号を追加
 
@@ -105,10 +106,16 @@ class node:  # ノードの情報や処理
       if not self.packet.living_time:  # パケットが生成されたばかりの時
         self.pit[self.packet.content_id] = []
         self.pit[self.packet.content_id].append(self.received_node)
-      if self.packet.content_id is self.request_content_id:  # パケットがコンテンツ要求端末に到達した場合
+      if self.packet.content_id in self.request_content:  # パケットがコンテンツ要求端末に到達した場合
         self.packet.living_time = 255
-        print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
+        self.request_content[self.packet.content_id] += 1 / self.packet.max_number
+        if self.request_content[self.packet.content_id] >= 1.0:
+          start_time = self.get_content_time[self.packet.content_id]
+          self.get_content_time[self.packet.content_id] = (time - start_time) * 20
+        # print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
     elif type_packet is slime_interest_packet:  # slime-interestパケットの時
+      if not self.packet.living_time:
+        self.get_content_time[self.packet.content_id] = time
       if self.packet.randam_bin in list(_packet.randam_bin for _packet in self.flatting_request_packet):
         self.packet.living_time = 255
     elif type_packet is slime_data_packet:  # slime-dataパケットの時
@@ -116,7 +123,7 @@ class node:  # ノードの情報や処理
         fpit_index = self.packet.get_fpit_index()
         self.f_pit[fpit_index] = []
         self.f_pit[fpit_index].append(self.received_node)
-      if self.packet.content_id is self.request_content_id:  # パケットがコンテンツ要求端末に到達した場合
+      if self.packet.content_id in self.request_content:  # パケットがコンテンツ要求端末に到達した場合
         self.packet.living_time = 255
         print("リクエス到着！経路{}".format(self.packet.trace))
         self.set_packet(self.packet.content_id, self.packet.content_position)
@@ -166,12 +173,12 @@ class node:  # ノードの情報や処理
     # o
     content_store_index = content_ids.index(self.packet.content_id)
     packet_num = self.content_store[content_store_index].data_size / self.mtu
-    floor_packet_num = math.floor(packet_num)
-    for i in range(floor_packet_num):
-      data = data_packet(self, self.packet.content_id, self.mtu, max_number=floor_packet_num, number=i)
+    ceil_packet_num = math.ceil(packet_num)
+    for i in range(math.floor(packet_num)):
+      data = data_packet(self, self.packet.content_id, self.mtu, max_number=ceil_packet_num, number=i)
       self.buffer_queue.put((data, self.received_node))
     if packet_num % 1:
-      data = data_packet(self, self.packet.content_id, packet_num % 1, max_number=floor_packet_num, number=floor_packet_num)
+      data = data_packet(self, self.packet.content_id, self.mtu * (packet_num % 1), max_number=ceil_packet_num, number=ceil_packet_num)
       self.buffer_queue.put((data, self.received_node))
     node.que.put(self)
     return
@@ -344,9 +351,9 @@ class node:  # ノードの情報や処理
     self.select_next_slime_data()
     return
 
-  def packet_protocol(self, nodes):
+  def packet_protocol(self, nodes, time=None):
     # パケットの受信
-    self.get_packet()
+    self.get_packet(time=time)
 
     if self.packet is None:  # パケットが破棄されている場合
       return  # プロトコルを終了する

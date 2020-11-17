@@ -57,7 +57,7 @@ def get_nodes_color(nodes):  # ノードの色をコンテンツを保持して�
   for _node in nodes:
     if len(_node.content_store) != 0:
       nodes_color.append("red")
-    elif _node.request_content_id != "":
+    elif _node.request_content:
       nodes_color.append("green")
     else:
       nodes_color.append("blue")
@@ -128,6 +128,7 @@ def main():
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = random.randint(0, MAX_NODES)
   nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
+  nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo2.png", data_size=10000))
   # have_content_node = 63
   # nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo2.png", data_size=10000))
   # want_content_node = random.randint(0, MAX_NODES)
@@ -137,7 +138,7 @@ def main():
   # want_content_node = 50
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 71
-  nodes[want_content_node].set_packet("www.google.com/logo.png")
+  nodes[want_content_node].set_packet("www.google.com/logo2.png")
   want_content_node = 93
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)  # すでにコンテンツの位置を知っている場合
   nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
@@ -156,9 +157,6 @@ def main():
     G.add_nodes_from(nodes)
     G.add_edges_from(nodes_link)
 
-    # loop_count = node.que.qsize()
-    # print(list(_n.number for _n in node.que.queue))
-
     # if loop_count == 0: # コンテンツが全て到着時，再びコンテンツを要求
     #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
     #   loop_count = node.que.qsize()
@@ -169,7 +167,7 @@ def main():
       if not _node.buffer_queue.qsize():
         continue
       print("Node{} process packet-protocol".format(_node.number))
-      _node.packet_protocol(nodes)
+      _node.packet_protocol(nodes, time=i)
       trafic_num += 1
       # trafic_num += len(_node.select_next_node)
       for n in _node.select_next_node:
@@ -206,7 +204,15 @@ def main():
   # return
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
   anim.save("Export/SaveAnimaiton.gif", writer="imagemagick", fps=fps)
-  create_graph(name="traffic", x=trafic_list, y=list(range(len(trafic_list))))
+  # create_graph(name="traffic", x=trafic_list, y=list(range(len(trafic_list))))
+  for _node in nodes:
+    if not _node.request_content:
+      continue
+    print("Node{}".format(_node.number), end=" ")
+    for k, v in _node.request_content.items():
+      print("Content_id:{} Delevary rate:{}".format(k, v), end=" ")
+    for k, v in _node.get_content_time.items():
+      print("end to end time :{}".format(v))
 
 
 if __name__ == "__main__":
