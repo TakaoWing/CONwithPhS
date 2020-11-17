@@ -101,6 +101,23 @@ def flatting(nodes):
   return
 
 
+def create_graph(name, x, y):
+  plt.cla()
+  plt.tick_params(bottom=True,
+                  left=True,
+                  right=False,
+                  top=False)
+  plt.tick_params(labelbottom=True,
+                  labelleft=True,
+                  labelright=False,
+                  labeltop=False)
+  plt.plot(y, x)
+  plt.xlabel("Unit Time", fontsize=24)
+  plt.ylabel("Traffic", fontsize=24)
+  plt.savefig("Export/{}.png".format(name))
+  return
+
+
 def main():
   MAX_NODES = 100  # ノードを数を設定
   nodes = create_nodes(MAX_NODES)  # max_nodesだけノードを生成
@@ -127,6 +144,8 @@ def main():
 
   fig = plt.figure(figsize=(10, 10))
 
+  trafic_list = []
+
   def animate(i):
     plt.cla()
     nodes_position = get_nodes_position(nodes)
@@ -145,11 +164,14 @@ def main():
     #   loop_count = node.que.qsize()
 
     edges_communication = []
+    trafic_num = 0
     for _node in nodes:
       if not _node.buffer_queue.qsize():
         continue
       print("Node{} process packet-protocol".format(_node.number))
       _node.packet_protocol(nodes)
+      trafic_num += 1
+      # trafic_num += len(_node.select_next_node)
       for n in _node.select_next_node:
         print("Node{} → Node{}".format(_node.number, n.number))
         from_node, to_node = _node, n
@@ -157,17 +179,8 @@ def main():
         if from_node.number > to_node.number:
           from_node, to_node = to_node, from_node
         edges_communication.append((from_node, to_node, type_packet))
-    # for c in range(loop_count):
-    #   _node = node.que.get()
-    #   print("Node{} process packet-protocol".format(_node.number))
-    #   _node.packet_protocol(nodes)
-    #   for n in _node.select_next_node:
-    #     print("Node{} → Node{}".format(_node.number, n.number))
-    #     from_node, to_node = _node, n
-    #     type_packet = _node.packet_type
-    #     if from_node.number > to_node.number:
-    #       from_node, to_node = to_node, from_node
-    #     edges_communication.append((from_node, to_node, type_packet))
+
+    trafic_list.append(trafic_num)
 
     edges_color = get_eges_color(nodes_link, edges_communication)
 
@@ -178,7 +191,7 @@ def main():
     plt.title("t=" + str(i))
 
     # グラフの保存
-    plt.savefig("Export/netork.png")
+    # plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
     # nodes_move(nodes)
@@ -193,6 +206,7 @@ def main():
   # return
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
   anim.save("Export/SaveAnimaiton.gif", writer="imagemagick", fps=fps)
+  create_graph(name="traffic", x=trafic_list, y=list(range(len(trafic_list))))
 
 
 if __name__ == "__main__":
