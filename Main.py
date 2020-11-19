@@ -91,6 +91,27 @@ def get_eges_color(edges, edges_communication):
   return edges_color
 
 
+def get_file_name(nodes):
+  file_name = "User("
+  for i, _node in enumerate(nodes):
+    if not _node.request_content:
+      continue
+    file_name += str(_node.number)
+    file_name += ","
+  file_name = file_name[:-1]
+  file_name += ")"
+  file_name += "2"
+  file_name += "Content("
+  for i, _node in enumerate(nodes):
+    if not _node.content_store:
+      continue
+    file_name += str(_node.number)
+    file_name += ","
+  file_name = file_name[:-1]
+  file_name += ")"
+  return file_name
+
+
 def nodes_move(nodes):  # nodeの動きをまとめて実装
   for _node in nodes:
     _node.move()
@@ -135,14 +156,18 @@ def main():
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
   # want_content_node = 47
   # nodes[want_content_node].set_packet("www.google.com/logo2.png")
-  # want_content_node = 50
-  # nodes[want_content_node].set_packet("www.google.com/logo.png")
-  want_content_node = 71
+  want_content_node = 92
+  nodes[want_content_node].set_packet("www.google.com/logo.png")
+  want_content_node = 50
+  nodes[want_content_node].set_packet("www.google.com/logo.png")
+  want_content_node = 70
   nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 93
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)  # すでにコンテンツの位置を知っている場合
   nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
 
+  file_name = get_file_name(nodes)
+  print(file_name)
   fig = plt.figure(figsize=(10, 10))
 
   trafic_list = []
@@ -160,6 +185,14 @@ def main():
     # if loop_count == 0: # コンテンツが全て到着時，再びコンテンツを要求
     #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
     #   loop_count = node.que.qsize()
+
+    for _node in nodes:
+      if not _node.f_pit:
+        continue
+      for k, vs in _node.f_pit.items():
+        for v in vs:
+          print("Node{} → Node{}".format(_node.number, v.number), end=",")
+      print("")
 
     edges_communication = []
     trafic_num = 0
@@ -203,7 +236,7 @@ def main():
   # animate(0)
   # return
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
-  anim.save("Export/SaveAnimaiton.gif", writer="imagemagick", fps=fps)
+  anim.save("Export/{}.gif".format(file_name), writer="imagemagick", fps=fps)
   # create_graph(name="traffic", x=trafic_list, y=list(range(len(trafic_list))))
   for _node in nodes:
     if not _node.request_content:
