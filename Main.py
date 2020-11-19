@@ -127,8 +127,8 @@ def main():
 
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = random.randint(0, MAX_NODES)
-  nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo.png", data_size=10000))
-  nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo2.png", data_size=10000))
+  nodes[have_content_node].content_store["www.google.com/logo.png"] = content(content_id="www.google.com/logo.png", data_size=10000)
+  # nodes[have_content_node].content_store["www.google.com/logo2.png"] = content(content_id="www.google.com/logo2.png", data_size=10000)
   # have_content_node = 63
   # nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo2.png", data_size=10000))
   # want_content_node = random.randint(0, MAX_NODES)
@@ -138,7 +138,7 @@ def main():
   # want_content_node = 50
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 71
-  nodes[want_content_node].set_packet("www.google.com/logo2.png")
+  nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 93
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)  # すでにコンテンツの位置を知っている場合
   nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
@@ -189,7 +189,7 @@ def main():
     plt.title("t=" + str(i))
 
     # グラフの保存
-    # plt.savefig("Export/netork.png")
+    plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
     # nodes_move(nodes)
@@ -210,7 +210,7 @@ def main():
       continue
     print("Node{}".format(_node.number), end=" ")
     for k, v in _node.request_content.items():
-      print("Content_id:{} Delevary rate:{}".format(k, v), end=" ")
+      print("Content_id:{} Delivery rate:{}".format(k, v), end=" ")
     for k, v in _node.get_content_time.items():
       print("end to end time :{}".format(v))
 

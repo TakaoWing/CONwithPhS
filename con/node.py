@@ -13,7 +13,7 @@ class content:  # コンテンツの情報をまとめたもの
   def __init__(self, content_id, data_size):
     self.content_id = content_id  # コンテンツのid
     self.data_size = data_size  # データサイズ[byte]
-    self.case_size = 0  # キャッシュサイズ[kbyte]
+    self.cash_size = 0  # キャッシュサイズ[kbyte]
     self.ttl = 255  # コンテンツの公開時間[s]
     self.packets = math.ceil(self.data_size / 64)  # コンテンツのパケット数
 
@@ -51,7 +51,7 @@ class node:  # ノードの情報や処理
     self.neighbor = []
     self.energy = 1
     self.buffer = 1
-    self.content_store = []
+    self.content_store = {}
     self.pit = {}
     self.f_pit = {}
     self.fib = {}
@@ -106,6 +106,12 @@ class node:  # ノードの情報や処理
       if not self.packet.living_time:  # パケットが生成されたばかりの時
         self.pit[self.packet.content_id] = []
         self.pit[self.packet.content_id].append(self.received_node)
+      else:
+        if self.packet.content_id not in self.content_store:  # コンテンツストアにコンテンツIDがない時
+          self.content_store[self.packet.content_id] = content(content_id="www.google.com/logo.png", data_size=10000)
+        else:  # コンテンツストアにコンテンツIDがある場合
+          if self.content_store[self.packet.content_id].cash_size < self.content_store[self.packet.content_id].data_size:
+            self.content_store[self.packet.content_id].cash_size += self.packet.data_size
       if self.packet.content_id in self.request_content:  # パケットがコンテンツ要求端末に到達した場合
         self.packet.living_time = 255
         self.request_content[self.packet.content_id] += 1 / self.packet.max_number
@@ -138,7 +144,7 @@ class node:  # ノードの情報や処理
       return
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
-    if self.packet.content_id not in list(_content.content_id for _content in self.content_store):  # コンテンツストアにコンテンツIDを持ったコンテンツがない場合以下の処理を実行しない
+    if self.packet.content_id not in self.content_store:  # コンテンツストアにコンテンツIDを持ったコンテンツがない場合以下の処理を実行しない
       return
     self.fragmentation()  # フラグメンテーションを実行
     self.packet = None  # パケットを破棄する
@@ -149,7 +155,7 @@ class node:  # ノードの情報や処理
       return
     if not self.content_store:  # コンテンツストアが空の場合，終了
       return
-    if self.packet.content_id not in list(_content.content_id for _content in self.content_store):  # コンテンツストアにコンテンツIDを持ったコンテンツがない場合以下の処理を実行しない
+    if self.packet.content_id not in self.content_store:  # コンテンツストアにコンテンツIDを持ったコンテンツがない場合以下の処理を実行しない
       return
 
     self.flatting_request_packet.append(self.packet)
@@ -166,13 +172,11 @@ class node:  # ノードの情報や処理
     パケットサイズをネットワークの最大パケットサイズに収まるようにパケットを分割すること
     分割されたパケットは，自身のパケットキューに登録する．
     """
-    content_ids = [file.content_id for file in self.content_store]
-    if self.packet.content_id not in content_ids:  # コンテンツストアに所望コンテンツのidがない場合，終了
+    if self.packet.content_id not in self.content_store:  # コンテンツストアに所望コンテンツのidがない場合，終了
       return
     # x Interestパケットが送信されたFaceに対して，Dataパケットを送信
     # o
-    content_store_index = content_ids.index(self.packet.content_id)
-    packet_num = self.content_store[content_store_index].data_size / self.mtu
+    packet_num = self.content_store[self.packet.content_id].data_size / self.mtu
     ceil_packet_num = math.ceil(packet_num)
     for i in range(math.floor(packet_num)):
       data = data_packet(self, self.packet.content_id, self.mtu, max_number=ceil_packet_num, number=i)
