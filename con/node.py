@@ -132,7 +132,8 @@ class node:  # ノードの情報や処理
       if self.packet.content_id in self.request_content:  # パケットがコンテンツ要求端末に到達した場合
         self.packet.living_time = 255
         print("リクエス到着！経路{}".format(self.packet.trace))
-        self.set_packet(self.packet.content_id, self.packet.content_position)
+        if self.packet.content_id not in self.content_store:  # コンテンツストアにコンテンツがない場合
+          self.set_packet(self.packet.content_id, self.packet.content_position)  # Interest Packetを送信
 
     if self.packet.is_living():
       self.packet = None

@@ -156,8 +156,8 @@ def main():
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
   # want_content_node = 47
   # nodes[want_content_node].set_packet("www.google.com/logo2.png")
-  want_content_node = 92
-  nodes[want_content_node].set_packet("www.google.com/logo.png")
+  # want_content_node = 92
+  # nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 50
   nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 70
@@ -173,6 +173,12 @@ def main():
   trafic_list = []
 
   def animate(i):
+    if i == 50:
+      want_content_node = 47
+      nodes[want_content_node].set_packet("www.google.com/logo.png")
+      want_content_node = 71
+      nodes[want_content_node].set_packet("www.google.com/logo.png")
+
     plt.cla()
     nodes_position = get_nodes_position(nodes)
     nodes_link = get_nodes_link(nodes)
