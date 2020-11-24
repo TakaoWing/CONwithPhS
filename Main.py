@@ -233,14 +233,7 @@ def main():
     # plt.pause(0.001)
     # nodes_move(nodes)
     return
-    # nodes_move(nodes)
 
-  # time = 0
-  # while(True):
-  #   animate(time)
-  #   time += 1
-  # animate(0)
-  # return
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
   anim.save("Export/{}.gif".format(file_name), writer="imagemagick", fps=fps)
   # create_graph(name="traffic", x=trafic_list, y=list(range(len(trafic_list))))
