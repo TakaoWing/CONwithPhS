@@ -13,6 +13,7 @@ from matplotlib.animation import FuncAnimation
 # my classess
 from con.node import node
 from con.node import content
+from con.pbrNode import pbrNode
 
 
 def create_nodes(max_nodes):  # ノードの作成
@@ -139,7 +140,7 @@ def create_graph(name, x, y):
   return
 
 
-def main():
+def slime_main():
   MAX_NODES = 100  # ノードを数を設定
   nodes = create_nodes(MAX_NODES)  # max_nodesだけノードを生成
 
@@ -245,10 +246,17 @@ def main():
       print("Content_id:{} Delivery rate:{}".format(k, v), end=" ")
     for k, v in _node.get_content_time.items():
       print("end to end time :{}".format(v))
+  return
+
+
+def pbr_main():
+
+  return
 
 
 if __name__ == "__main__":
   fps = 30
   t = 100
   random.seed(0)
-  main()
+  slime_main()
+  pbr_main()

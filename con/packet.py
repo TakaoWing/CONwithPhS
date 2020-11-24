@@ -68,3 +68,14 @@ class slime_data_packet(packet):
     super().__init__(content_id)
     self.content_position = content_position
     self.randam_bin = randam_bin
+
+
+class advertise_packet(packet):
+  """
+  PBR(Potencal Based Routing)用のパケット
+  コンテンツ自身がコンテンツをネットワーク全体に広告する際に送信されるパケット
+  コンテンツの位置情報を持つ
+  """
+
+  def __init__(self, content_id):
+    super().__init__(content_id)
