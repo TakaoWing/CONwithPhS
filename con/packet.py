@@ -77,5 +77,7 @@ class advertise_packet(packet):
   コンテンツの位置情報を持つ
   """
 
-  def __init__(self, content_id):
+  def __init__(self, content_id, content_position):
     super().__init__(content_id)
+    self.content_position = content_position
+    self.quality_content = 1000

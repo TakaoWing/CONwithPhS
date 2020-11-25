@@ -60,6 +60,7 @@ class pbrNode:  # ノードの情報や処理
     self.request_content = {}  # request_content: {content_id,data_size}
     self.get_content_time = {}
     self.packet_type = ""
+    self.potentials = {}  # potentials : {content_id, potential_value}
 
   def connect_links(self, nodes):
     self.neighbor = []
@@ -74,14 +75,14 @@ class pbrNode:  # ノードの情報や処理
     self.position.move()
     return
 
-  def set_content(self, content_id):
-    self.content_store[content_id] = content(content_id=content_id, data_size=10000)
-    self.advertise_content(content_id)
+  def set_content(self, content):
+    self.content_store[content.content_id] = content
+    self.advertise_content(content.content_id)
     return
 
   def advertise_content(self, content_id):
-    advertise = advertise_packet(content_id)
-    self.buffer_queue((advertise, self))
+    advertise = advertise_packet(content_id, self.position)
+    self.buffer_queue.put((advertise, self))
     pbrNode.que.put(self)
     return
 
@@ -114,9 +115,12 @@ class pbrNode:  # ノードの情報や処理
         self.packet.living_time = 255
         self.request_content[self.packet.content_id] += 1 / self.packet.max_number
         if self.request_content[self.packet.content_id] >= 1.0:
-          start_time = self.get_content_time[self.packet.content_id]
-          self.get_content_time[self.packet.content_id] = (time - start_time) * 20
+          # start_time = self.get_content_time[self.packet.content_id]
+          self.get_content_time[self.packet.content_id] = (time) * 20
         # print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
+    elif type_packet is advertise_packet:
+      if self.packet.content_id in self.potentials:
+        self.packet.living_time = 255
 
     if self.packet.is_living():
       self.packet = None
@@ -181,6 +185,11 @@ class pbrNode:  # ノードの情報や処理
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
     self.select_next_node = []
+    potential_values = {}
+    for _neighbor in self.neighbor:
+      potential_values[_neighbor] = _neighbor.potentials[self.packet.content_id]
+
+    self.select_next_node.append(min(potential_values, key=potential_values.get))
     return
 
   def select_next_data(self):
@@ -191,6 +200,15 @@ class pbrNode:  # ノードの情報や処理
       return
     self.select_next_node = []
     self.select_next_node.extend(self.pit[self.packet.content_id])  # Dataパケットを送信するノードにPITのContentIDに紐づいているFaceをすべて登録する
+    return
+
+  def selct_next_advertise(self):
+    if self.packet is None:
+      return
+    self.select_next_node = []
+    self.select_next_node.extend(self.neighbor)
+    if self.received_node in self.select_next_node:
+      self.select_next_node.remove(self.received_node)
     return
 
   def write_pit(self):
@@ -229,13 +247,17 @@ class pbrNode:  # ノードの情報や処理
     self.packet = None
     return
 
+  def put_potential(self):
+    self.potentials[self.packet.content_id] = - self.packet.quality_content / (self.position.distance(self.packet.content_position) + 1e-25) ** self.packet.living_time
+    return
+
   def interest_packet_protocol(self, nodes):
     # content_storeにコンテンツがあるか確認 -(yes)> pitを元にdataパケットを送信する -> Interestパケットを破棄する
     self.check_have_content()
     # pitに要求されたコンテンツ名があるか確認 -(yes)> pitにInterestパケットを受信したフェイスを追記する -> Interestパケットを廃棄する
     self.check_have_pit()
     # fibに要求されたコンテンツ名があるか確認 -(no,yes)> フィザルムソルバーによって，fibを変更する
-    self.check_have_fib()
+    self.select_next()
     # pitにinterestパケットを受信したフェイスを記入する
     self.write_pit()
     return
@@ -250,11 +272,10 @@ class pbrNode:  # ノードの情報や処理
   def advertise_packet_protocol(self, nodes):
     # Potentialの計算
     self.put_potential()
-
     # 接続状況を確認
     self.send_hello(nodes)
     # 次のノードを選択
-
+    self.selct_next_advertise()
     return
 
   def packet_protocol(self, nodes, time=None):
