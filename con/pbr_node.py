@@ -1,46 +1,16 @@
 
 # node: ノードの情報や処理
-from con.packet import interest_packet, data_packet, advertise_packet
-import math
-import queue
-import copy
 from con.node import node
-from con.position import position
+from con.packet import interest_packet, data_packet, advertise_packet
 from con.content import content
+import copy
 
 
-class pbrNode(node):  # ノードの情報や処理
+class pbr_node(node):  # ノードの情報や処理
 
   def __init__(self, number):
-    self.number = number
-    self.position = position(0, 0)
-    self.neighbor = []
-    self.content_store = {}
-    self.pit = {}
-    self.fib = {}
-    self.communication_range = 60
-    self.buffer_queue = queue.Queue()
-    self.packet = None
-    self.select_next_node = []
-    self.mtu = 1200  # MTU: Maximum Transfer Unit default 1200[byte]
-    self.received_node = None
-    self.request_content = {}  # request_content: {content_id,data_size}
-    self.get_content_time = {}
-    self.packet_type = ""
+    super().__init__(number)
     self.potentials = {}  # potentials : {content_id, potential_value}
-
-  def connect_links(self, nodes):
-    self.neighbor = []
-    for _node in nodes:
-      if _node is self:
-        continue
-      if self.position.distance(_node.position) < self.communication_range:
-        self.neighbor.append(_node)
-    return
-
-  def move(self):
-    self.position.move()
-    return
 
   def set_content(self, content):
     self.content_store[content.content_id] = content
@@ -50,7 +20,7 @@ class pbrNode(node):  # ノードの情報や処理
   def advertise_content(self, content_id):
     advertise = advertise_packet(content_id, self.position)
     self.buffer_queue.put((advertise, self))
-    pbrNode.que.put(self)
+    self.que.put(self)
     return
 
   def set_packet(self, want_content):
@@ -59,7 +29,7 @@ class pbrNode(node):  # ノードの情報や処理
     interest = interest_packet(want_content)
 
     self.buffer_queue.put((interest, self))
-    pbrNode.que.put(self)
+    self.que.put(self)
     return
 
   def get_packet(self, time=None):
@@ -105,27 +75,6 @@ class pbrNode(node):  # ノードの情報や処理
     self.packet = None  # パケットを破棄する
     return
 
-  def fragmentation(self):
-    """
-    Fragmentation: フラグメンテーション
-    パケットサイズをネットワークの最大パケットサイズに収まるようにパケットを分割すること
-    分割されたパケットは，自身のパケットキューに登録する．
-    """
-    if self.packet.content_id not in self.content_store:  # コンテンツストアに所望コンテンツのidがない場合，終了
-      return
-    # x Interestパケットが送信されたFaceに対して，Dataパケットを送信
-    # o
-    packet_num = self.content_store[self.packet.content_id].data_size / self.mtu
-    ceil_packet_num = math.ceil(packet_num)
-    for i in range(math.floor(packet_num)):
-      data = data_packet(self, self.packet.content_id, self.mtu, max_number=ceil_packet_num, number=i)
-      self.buffer_queue.put((data, self.received_node))
-    if packet_num % 1:
-      data = data_packet(self, self.packet.content_id, self.mtu * (packet_num % 1), max_number=ceil_packet_num, number=ceil_packet_num)
-      self.buffer_queue.put((data, self.received_node))
-    pbrNode.que.put(self)
-    return
-
   def check_have_pit(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
@@ -135,17 +84,6 @@ class pbrNode(node):  # ノードの情報や処理
       return
     self.pit[self.packet.content_id].append(self.received_node)
     self.packet = None  # Interestパケットを廃棄する
-    return
-
-  def send_hello(self, nodes):
-    if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
-      return
-    self.neighbor = []
-    for _node in nodes:
-      if _node is self:
-        continue
-      if self.position.distance(_node.position) < self.communication_range:
-        self.neighbor.append(_node)
     return
 
   def select_next(self):
@@ -207,9 +145,9 @@ class pbrNode(node):  # ノードの情報や処理
     self.packet.living_time += 1
     for sn in self.select_next_node:
       sn.buffer_queue.put((copy.deepcopy(self.packet), self))
-      pbrNode.que.put(sn)
+      self.que.put(sn)
     if flag_send_data_packet:
-      pbrNode.que.put(self)
+      self.que.put(self)
     self.packet_type = str(type(self.packet))
     self.packet = None
     return
