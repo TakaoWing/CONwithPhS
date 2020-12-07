@@ -1,7 +1,9 @@
 
 # node: ノードの情報や処理
 from con.position import position
+from con.packet import data_packet
 import queue
+import math
 
 
 class node:  # ノードの情報や処理
@@ -36,6 +38,27 @@ class node:  # ノードの情報や処理
 
   def move(self):
     self.position.move()
+    return
+
+  def fragmentation(self):
+    """
+    Fragmentation: フラグメンテーション
+    パケットサイズをネットワークの最大パケットサイズに収まるようにパケットを分割すること
+    分割されたパケットは，自身のパケットキューに登録する．
+    """
+    if self.packet.content_id not in self.content_store:  # コンテンツストアに所望コンテンツのidがない場合，終了
+      return
+    # x Interestパケットが送信されたFaceに対して，Dataパケットを送信
+    # o
+    packet_num = self.content_store[self.packet.content_id].data_size / self.mtu
+    ceil_packet_num = math.ceil(packet_num)
+    for i in range(math.floor(packet_num)):
+      data = data_packet(self, self.packet.content_id, self.mtu, max_number=ceil_packet_num, number=i)
+      self.buffer_queue.put((data, self.received_node))
+    if packet_num % 1:
+      data = data_packet(self, self.packet.content_id, self.mtu * (packet_num % 1), max_number=ceil_packet_num, number=ceil_packet_num)
+      self.buffer_queue.put((data, self.received_node))
+    node.que.put(self)
     return
 
   def set_content(self, content):

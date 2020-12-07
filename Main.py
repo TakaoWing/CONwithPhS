@@ -206,13 +206,14 @@ def main(protocol):
       #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
       #   loop_count = node.que.qsize()
 
-    for _node in nodes:
-      if not _node.f_pit:
-        continue
-      for k, vs in _node.f_pit.items():
-        for v in vs:
-          print("Node{} → Node{}".format(_node.number, v.number), end=",")
-      print("")
+    if protocol == "slime":
+      for _node in nodes:
+        if not _node.f_pit:
+          continue
+        for k, vs in _node.f_pit.items():
+          for v in vs:
+            print("Node{} → Node{}".format(_node.number, v.number), end=",")
+        print("")
 
     edges_communication = []
     trafic_num = 0
@@ -245,7 +246,7 @@ def main(protocol):
     plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
-    nodes_move(nodes)
+    # nodes_move(nodes)
     return
 
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
@@ -266,4 +267,4 @@ if __name__ == "__main__":
   fps = 30
   t = 100
   random.seed(0)
-  main("slime")
+  main("pbr")
