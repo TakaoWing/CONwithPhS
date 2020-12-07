@@ -38,6 +38,9 @@ class node:  # ノードの情報や処理
     self.position.move()
     return
 
+  def set_content(self, content):
+    return
+
   def set_packet(self, want_content, content_positions=None):
     return
 

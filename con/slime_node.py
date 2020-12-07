@@ -18,6 +18,10 @@ class slime_node(node):  # ノードの情報や処理
     self.received_node = None
     self.flatting_request_packet = []
 
+  def set_content(self, content):
+    self.content_store[content.content_id] = content
+    return
+
   def set_packet(self, want_content, content_positions=None):
     self.request_content[want_content] = 0
 
