@@ -162,7 +162,6 @@ def slime_main():
   # nodes[want_content_node].set_packet("www.google.com/logo2.png")
   # want_content_node = 92
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
-  nodes[want_content_node].set_packet("www.google.com/logo.png")
   # want_content_node = 50
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
   # want_content_node = 70
