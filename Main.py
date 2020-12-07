@@ -8,6 +8,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import random
 from matplotlib.animation import FuncAnimation
+import queue
 
 # my classess
 from con.slime_node import slime_node
@@ -144,6 +145,7 @@ def create_graph(name, x, y):
 
 
 def main(protocol):
+
   MAX_NODES = 100  # ノードを数を設定
   if protocol == "slime":
     nodes = create_slime_nodes(MAX_NODES)  # max_nodesだけノードを生成
@@ -215,11 +217,16 @@ def main(protocol):
             print("Node{} → Node{}".format(_node.number, v.number), end=",")
         print("")
 
-    edges_communication = []
-    trafic_num = 0
+    que = queue.Queue()
     for _node in nodes:
       if not _node.buffer_queue.qsize():
         continue
+      que.put(_node)
+    print("Process Node : {}".format(que.qsize()))
+    edges_communication = []
+    trafic_num = 0
+    while not que.empty():
+      _node = que.get()
       print("Node{} process packet-protocol".format(_node.number))
       _node.packet_protocol(nodes, time=i)
       trafic_num += 1
@@ -231,6 +238,21 @@ def main(protocol):
         if from_node.number > to_node.number:
           from_node, to_node = to_node, from_node
         edges_communication.append((from_node, to_node, type_packet))
+
+    # for _node in nodes:
+    #   if not _node.buffer_queue.qsize():
+    #     continue
+    #   print("Node{} process packet-protocol".format(_node.number))
+    #   _node.packet_protocol(nodes, time=i)
+    #   trafic_num += 1
+    #   # trafic_num += len(_node.select_next_node)
+    #   for n in _node.select_next_node:
+    #     print("Node{} → Node{}".format(_node.number, n.number))
+    #     from_node, to_node = _node, n
+    #     type_packet = _node.packet_type
+    #     if from_node.number > to_node.number:
+    #       from_node, to_node = to_node, from_node
+    #     edges_communication.append((from_node, to_node, type_packet))
 
     trafic_list.append(trafic_num)
 
@@ -246,11 +268,11 @@ def main(protocol):
     plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
-    # nodes_move(nodes)
+    nodes_move(nodes)
     return
 
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
-  anim.save("Export/{}.gif".format(file_name), writer="imagemagick", fps=fps)
+  anim.save("Export/{}_{}.gif".format(protocol, file_name), writer="imagemagick", fps=fps)
   # create_graph(name="traffic", x=trafic_list, y=list(range(len(trafic_list))))
   for _node in nodes:
     if not _node.request_content:
@@ -267,4 +289,4 @@ if __name__ == "__main__":
   fps = 30
   t = 100
   random.seed(0)
-  main("pbr")
+  main("slime")
