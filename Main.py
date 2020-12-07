@@ -200,7 +200,7 @@ def main(protocol):
     G.add_nodes_from(nodes)
     G.add_edges_from(nodes_link)
 
-    if protocol == "pbr" and i == 10:
+    if protocol == "pbr" and i == 20:
       want_content_node = 93
       nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
 
@@ -239,21 +239,6 @@ def main(protocol):
           from_node, to_node = to_node, from_node
         edges_communication.append((from_node, to_node, type_packet))
 
-    # for _node in nodes:
-    #   if not _node.buffer_queue.qsize():
-    #     continue
-    #   print("Node{} process packet-protocol".format(_node.number))
-    #   _node.packet_protocol(nodes, time=i)
-    #   trafic_num += 1
-    #   # trafic_num += len(_node.select_next_node)
-    #   for n in _node.select_next_node:
-    #     print("Node{} → Node{}".format(_node.number, n.number))
-    #     from_node, to_node = _node, n
-    #     type_packet = _node.packet_type
-    #     if from_node.number > to_node.number:
-    #       from_node, to_node = to_node, from_node
-    #     edges_communication.append((from_node, to_node, type_packet))
-
     trafic_list.append(trafic_num)
 
     edges_color = get_eges_color(nodes_link, edges_communication)
@@ -268,7 +253,7 @@ def main(protocol):
     plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
-    nodes_move(nodes)
+    # nodes_move(nodes)
     return
 
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
@@ -288,5 +273,5 @@ def main(protocol):
 if __name__ == "__main__":
   fps = 30
   t = 100
-  random.seed(0)
+  random.seed(6)
   main("slime")

@@ -135,6 +135,8 @@ class slime_node(node):  # ノードの情報や処理
       print("Node {}:{}".format(k.number, vars(v)))
 
     quantities = self.slimes[self.packet.content_id].get_quantities()
+    if self.received_node in quantities:
+      del quantities[self.received_node]
     self.select_next_node.append(max(quantities, key=quantities.get))
     return
 
@@ -167,6 +169,7 @@ class slime_node(node):  # ノードの情報や処理
     self.select_next_node = []
     self.select_next_node.extend(list(face for face in self.f_pit[fpit_index]))  # Dataパケットを送信するノードにPITのContentIDに紐づいているFaceをすべて登録する
     del self.f_pit[fpit_index]
+
     return
 
   def write_pit(self):
@@ -217,6 +220,8 @@ class slime_node(node):  # ノードの情報や処理
 
     self.packet.living_time += 1
     for sn in self.select_next_node:
+      if sn not in self.neighbor:
+        continue
       sn.buffer_queue.put((copy.deepcopy(self.packet), self))
       node.que.put(sn)
     if flag_send_data_packet:
