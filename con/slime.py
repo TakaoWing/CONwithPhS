@@ -140,5 +140,5 @@ class slime:
   def get_quantities(self):
     quantities = {}
     for tube_key, tube_value in self.tubes.items():
-      quantities[tube_key] = abs(tube_value.quantity
+      quantities[tube_key] = abs(tube_value.quantity)
     return quantities

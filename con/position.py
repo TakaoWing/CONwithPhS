@@ -19,7 +19,7 @@ class position:
     return self.vector
 
   def move(self):
-    speed = 0.1
+    speed = 3.0
     self.x += random.uniform(-speed, speed)
     self.y += random.uniform(-speed, speed)
 
