@@ -11,10 +11,8 @@ import random
 from matplotlib.animation import FuncAnimation
 
 # my classess
-# from con.node import node
-# from con.node import content
-from con.pbrNode import pbrNode
-from con.pbrNode import content
+from con.node import node, content
+# from con.pbrNode import pbrNode, content
 
 
 def create_nodes(max_nodes):  # ノードの作成
@@ -164,10 +162,11 @@ def slime_main():
   # nodes[want_content_node].set_packet("www.google.com/logo2.png")
   # want_content_node = 92
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
-  want_content_node = 50
   nodes[want_content_node].set_packet("www.google.com/logo.png")
-  want_content_node = 70
-  nodes[want_content_node].set_packet("www.google.com/logo.png")
+  # want_content_node = 50
+  # nodes[want_content_node].set_packet("www.google.com/logo.png")
+  # want_content_node = 70
+  # nodes[want_content_node].set_packet("www.google.com/logo.png")
   want_content_node = 93
   # nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)  # すでにコンテンツの位置を知っている場合
   nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
@@ -179,11 +178,11 @@ def slime_main():
   trafic_list = []
 
   def animate(i):
-    if i == 50:
-      want_content_node = 47
-      nodes[want_content_node].set_packet("www.google.com/logo.png")
-      want_content_node = 71
-      nodes[want_content_node].set_packet("www.google.com/logo.png")
+    # if i == 50:
+    #   want_content_node = 47
+    #   nodes[want_content_node].set_packet("www.google.com/logo.png")
+    #   want_content_node = 71
+    #   nodes[want_content_node].set_packet("www.google.com/logo.png")
 
     plt.cla()
     nodes_position = get_nodes_position(nodes)
@@ -237,7 +236,7 @@ def slime_main():
     plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
-    # nodes_move(nodes)
+    nodes_move(nodes)
     return
 
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
@@ -349,5 +348,5 @@ if __name__ == "__main__":
   fps = 30
   t = 100
   random.seed(0)
-  # slime_main()
-  pbr_main()
+  slime_main()
+  # pbr_main()

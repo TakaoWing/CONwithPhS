@@ -1,45 +1,12 @@
 
 # node: ノードの情報や処理
-from scipy.spatial import distance
+from con.content import content
+from con.position import position
 from con.slime import slime
 from con.packet import interest_packet, data_packet, slime_interest_packet, slime_data_packet
-import random
 import math
 import queue
 import copy
-
-
-class content:  # コンテンツの情報をまとめたもの
-  def __init__(self, content_id, data_size):
-    self.content_id = content_id  # コンテンツのid
-    self.data_size = data_size  # データサイズ[byte]
-    self.cash_size = 0  # キャッシュサイズ[kbyte]
-    self.ttl = 255  # コンテンツの公開時間[s]
-    self.packets = math.ceil(self.data_size / 64)  # コンテンツのパケット数
-
-
-class position:
-  def __init__(self, x, y):
-    self.x = x
-    self.y = y
-    self.vector = (self.x, self.y)
-
-  def set_vector(self, x, y):
-    self.x = x
-    self.y = y
-    self.vector = (self.x, self.y)
-
-  def get_vector(self):
-    self.vector = (self.x, self.y)
-    return self.vector
-
-  def move(self):
-    speed = 0.01
-    self.x += random.uniform(-speed, speed)
-    self.y += random.uniform(-speed, speed)
-
-  def distance(self, other_position):
-    return distance.euclidean(self.get_vector(), other_position.get_vector())
 
 
 class node:  # ノードの情報や処理
