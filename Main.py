@@ -127,6 +127,11 @@ def nodes_move(nodes):  # nodeの動きをまとめて実装
   return
 
 
+def nodes_update_physarum(nodes):  # nodeが持つ粘菌を経過時間ごとに更新する
+  for _node in nodes:
+    _node.update_physarum()
+
+
 def create_graph(name, x, y):
   plt.cla()
   plt.tick_params(bottom=True,
@@ -209,6 +214,7 @@ def main(protocol):
       #   loop_count = node.que.qsize()
 
     if protocol == "slime":
+      nodes_update_physarum(nodes)
       for _node in nodes:
         if not _node.f_pit:
           continue
@@ -254,6 +260,7 @@ def main(protocol):
     # グラフの表示
     # plt.pause(0.001)
     # nodes_move(nodes)
+
     return
 
   anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
@@ -273,5 +280,5 @@ def main(protocol):
 if __name__ == "__main__":
   fps = 30
   t = 100
-  random.seed(6)
+  random.seed(0)
   main("slime")

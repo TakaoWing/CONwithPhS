@@ -96,7 +96,7 @@ class tube:  # ノード間を繋ぐ粘菌のチューブ
 
 
 class slime:
-  def __init__(self, _node):
+  def __init__(self, _node, content_position):
     # conductivitiesはD[n]を求めるためにD[n-1]を用いるため,conductivies[1] = D[n-1], conductivies[0] = D[n]となるような構造に変更する．
     # conductivies[1][nodes(neighbers)]となる構造体である．
     # self.conductivities = {}  # 自身と接続されたノード間の伝導率の値，D_ij，ネットワーク固有の物理的徳衛 D_ijの初期値には，リンク品質を用いる
@@ -117,11 +117,13 @@ class slime:
     self.vector_me = (0, 0)
     self.vector_distination = (0, 0)
     self.tubes_quantity = 0  # 隣接ノードすべてのチューブの流量の合計
+    self.content_position = content_position
 
   def physarum_solver(self):
 
     self.vector_me = self.node.position.get_vector()  # vector_me : 自身のベクトル
-    self.vector_distination = self.node.packet.content_positions.get_vector()  # vector_disination : コンテンツ保持端末のベクトル
+    self.vector_distination = self.content_position.get_vector()  # vector_disination : コンテンツ保持端末のベクトル
+    # self.vector_distination = self.node.packet.content_positions.get_vector()  # vector_disination : コンテンツ保持端末のベクトル
 
     for k_tube, v_tube in self.tubes.items():  # チューブに対して，以下の処理を実行する
       if k_tube not in self.node.neighbor:  # 隣接ノードにないチューブを削除する

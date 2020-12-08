@@ -18,6 +18,22 @@ class slime_node(node):  # ノードの情報や処理
     self.received_node = None
     self.flatting_request_packet = []
 
+  def connect_links(self, nodes):
+    self.neighbor = []
+    for _node in nodes:
+      if _node is self:
+        continue
+      if self.position.distance(_node.position) < self.communication_range:
+        self.neighbor.append(_node)
+        if not _node.content_store:
+          continue
+        for content_id in _node.content_store.keys():
+          if not self.slimes or content_id not in self.slimes:
+            self.slimes[content_id] = slime(self, _node.position)
+          else:
+            self.slimes[content_id].content_position = _node.position
+    return
+
   def set_content(self, content):
     self.content_store[content.content_id] = content
     return
@@ -127,7 +143,9 @@ class slime_node(node):  # ノードの情報や処理
     self.select_next_node = []
 
     if self.packet.content_id not in self.slimes:
-      self.slimes[self.packet.content_id] = slime(self)
+      self.slimes[self.packet.content_id] = slime(self, self.packet.content_positions)
+    else:
+      self.slimes[self.packet.content_id].content_position = self.packet.content_positions
 
     self.slimes[self.packet.content_id].physarum_solver()
 
@@ -291,4 +309,13 @@ class slime_node(node):  # ノードの情報や処理
 
     # パケットを転送する
     self.send_packet()
+    return
+
+  def update_physarum(self):
+    if not self.slimes:
+      return
+    for _slime in self.slimes.values():
+      _slime.physarum_solver()
+      for (k, v) in _slime.tubes.items():
+        print("Node{}→Node{} :{}".format(self.number, k.number, vars(v)))
     return
