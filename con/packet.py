@@ -67,7 +67,7 @@ class slime_data_packet(packet):
   def __init__(self, content_id, content_position, randam_bin):
     super().__init__(content_id)
     self.content_position = content_position
-    self.randam_bin = randam_bin
+    self.randam_bin = randam_bin  # randam_bin = Nonce
 
 
 class advertise_packet(packet):

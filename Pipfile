@@ -10,6 +10,7 @@ mypy = "*"
 
 [packages]
 numpy-stl = "*"
+pyyaml = "*"
 
 [requires]
 python_version = "3.8"

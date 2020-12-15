@@ -54,8 +54,8 @@ class tube:  # ノード間を繋ぐ粘菌のチューブ
     vector_me = self.slime.vector_me
     vector_neighbor = neighbor.position.get_vector()  # vector_neighbor : 隣接ノードのベクトル
 
-    vector_me2neighbor = np.array(list(map(lambda vec1, vec2: vec1 - vec2, vector_me, vector_neighbor)))  # vector_me2neighbor : 自身の座標を原点とした隣接ノードのベクトル
-    vector_me2d = np.array(list(map(lambda vec1, vec2: vec1 - vec2, vector_me, self.slime.vector_distination)))  # vector_me2d : 自身の座標を原点としたコンテンツ保持端末のベクトル
+    vector_me2neighbor = np.array(list(map(lambda vec1, vec2: vec2 - vec1, vector_me, vector_neighbor)))  # vector_me2neighbor : 自身の座標を原点とした隣接ノードのベクトル
+    vector_me2d = np.array(list(map(lambda vec1, vec2: vec2 - vec1, vector_me, self.slime.vector_distination)))  # vector_me2d : 自身の座標を原点としたコンテンツ保持端末のベクトル
     theta_neighbor = self.tangent_angle(vector_me2neighbor, vector_me2d)  # theta_neighbor : vector_me2neighborとvector_me2dのなす角
 
     length_d = LA.norm(vector_me2d)
@@ -105,8 +105,8 @@ class slime:
     # self.quantities = {}  # 自身と接続されたノード間の流量，Q_ij，
     # self.length = {}  # 自身と接続されたノード間の長さ，L_ij，物理的な距離とはことなる．自身とコンテンツまでの直線距離から接続されたノードの投影距離である．
     self.node = _node  # nodeの情報を取得
-    self.alpha = 0.62  # dP_ijの値を決定する係数 nodeのエネルギー残量の係数
-    self.beta = 0.38  # dP_ijの値を決定する係数 nodeのバッファ残量の係数
+    self.alpha = 0.38  # dP_ijの値を決定する係数 nodeのエネルギー残量の係数
+    self.beta = 0.62  # dP_ijの値を決定する係数 nodeのバッファ残量の係数
     self.gamma = 0.5  # 収縮率
     self.P_MAX = 1.0  # 通信できる最大電力 node固有の値
     self.P_MIN = 0.1  # 通信できる最小電力 node固有の値

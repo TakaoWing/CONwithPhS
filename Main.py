@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import random
 from matplotlib.animation import FuncAnimation
 import queue
+import yaml
 
 # my classess
 from con.slime_node import slime_node
@@ -35,14 +36,34 @@ def create_pbr_nodes(max_nodes):  # ノードの作成
 def set_matrix(nodes, root_max_nodes):  # ノードを格子状に配置
   for i in range(root_max_nodes):
     for j in range(root_max_nodes):
-      nodes[j + i * root_max_nodes].position.set_vector(i, j)
+      nodes[j + i * root_max_nodes].position.set_vector(i, j),
   return nodes
 
 
 def set_random(nodes, field_size):  # ノードをランダムを広さ(diled_size)上に配置
   for _node in nodes:
     _node.position.set_vector(random.uniform(0, field_size), random.uniform(0, field_size))
+    # _node.energy = random.uniform(0.3, 1.0)
   return nodes
+
+
+def imput_yaml(nodes):
+  nodes_data = {}
+  with open('nodes.yaml') as file:
+    nodes_data = yaml.safe_load(file)
+  for _node in nodes:
+    _node.position.set_vector(nodes_data[_node.number]['position']['x'], nodes_data[_node.number]['position']['y'])
+    _node.energy = nodes_data[_node.number]['energy']
+
+
+def output_yaml(nodes):
+  nodes_data = {}
+  for _node in nodes:
+    node_data = {_node.number: {'number': _node.number, 'position': {'x': _node.position.x, 'y': _node.position.y}, 'energy': random.uniform(0.3, 1.0)}}
+    nodes_data.update(node_data)
+  with open('nodes.yaml', 'w') as file:
+    yaml.dump(nodes_data, file)
+  return
 
 
 def get_nodes_position(nodes):  # ノードの場所を辞書型配列{ノード,ノードの場所}を返す
@@ -161,10 +182,14 @@ def main(protocol):
     return
 
   # ノードに偏りが生じないように分散させたい！
-  set_random(nodes=nodes, field_size=400)
+  # set_random(nodes=nodes, field_size=400)
+
+  # output_yaml(nodes)
+
+  imput_yaml(nodes)
 
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
-  have_content_node = random.randint(0, MAX_NODES)
+  have_content_node = 57  # random.randint(0, MAX_NODES)
   nodes[have_content_node].set_content(content(content_id="www.google.com/logo.png", data_size=10000))
   # nodes[have_content_node].content_store["www.google.com/logo2.png"] = content(content_id="www.google.com/logo2.png", data_size=10000)
   # have_content_node = 63
