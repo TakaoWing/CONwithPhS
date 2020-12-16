@@ -259,7 +259,7 @@ def main(protocol):
     while not que.empty():
       _node = que.get()
       print("Node{} process packet-protocol".format(_node.number))
-      _node.packet_protocol(nodes, time=i)
+         _node.packet_protocol(nodes, time=i)
       trafic_num += 1
       # trafic_num += len(_node.select_next_node)
       for n in _node.select_next_node:

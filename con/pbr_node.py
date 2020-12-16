@@ -79,6 +79,8 @@ class pbr_node(node):  # ノードの情報や処理
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
     if self.packet.content_id not in self.pit:  # 自身のPITにpacketのコンテンツIDが含まれているかどうか
+      self.set_packet(self.packet.content_positions)
+      self.packet = None  # Interestパケットを廃棄する
       return
     if self.received_node in self.pit[self.packet.content_id]:  # PITのコンテンツIDの中に前のノードがない場合，追加する
       return
