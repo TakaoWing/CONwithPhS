@@ -66,6 +66,12 @@ def output_yaml(nodes):
   return
 
 
+def check_nodes_active(nodes):
+  for _node in nodes:
+    _node.check_is_active()
+  return
+
+
 def get_nodes_position(nodes):  # ノードの場所を辞書型配列{ノード,ノードの場所}を返す
   nodes_position = [_node.position.get_vector() for _node in nodes]
   return dict(zip(nodes, nodes_position))
@@ -89,6 +95,8 @@ def get_nodes_color(nodes):  # ノードの色をコンテンツを保持して�
       nodes_color.append("red")
     elif _node.request_content:
       nodes_color.append("green")
+    elif not _node.is_active:
+      nodes_color.append("gray")
     else:
       nodes_color.append("blue")
 
@@ -222,6 +230,7 @@ def main(protocol):
     #   nodes[want_content_node].set_packet("www.google.com/logo.png")
 
     plt.cla()
+    check_nodes_active(nodes)
     nodes_position = get_nodes_position(nodes)
     nodes_link = get_nodes_link(nodes)
     nodes_color = get_nodes_color(nodes)
@@ -259,7 +268,7 @@ def main(protocol):
     while not que.empty():
       _node = que.get()
       print("Node{} process packet-protocol".format(_node.number))
-         _node.packet_protocol(nodes, time=i)
+      _node.packet_protocol(nodes, time=i)
       trafic_num += 1
       # trafic_num += len(_node.select_next_node)
       for n in _node.select_next_node:

@@ -19,19 +19,26 @@ class slime_node(node):  # ノードの情報や処理
     self.flatting_request_packet = []
 
   def connect_links(self, nodes):
+    if not self.is_active:  # アクティブでない場合，以下の処理を行わない．
+      return
+
+    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
+
     self.neighbor = []
+
     for _node in nodes:
-      if _node is self:
+      if _node is self or not _node.is_active:  # 自分自身または，処理対象ノードがアクティブでなければ以下の処理を行わない．
         continue
-      if self.position.distance(_node.position) < self.communication_range:
-        self.neighbor.append(_node)
-        if not _node.content_store:
-          continue
-        for content_id in _node.content_store.keys():
-          if not self.slimes or content_id not in self.slimes:
-            self.slimes[content_id] = slime(self, _node.position)
-          else:
-            self.slimes[content_id].content_position = _node.position
+      if self.position.distance(_node.position) > self.communication_range:  # 通信可能距離以内でなければ，以下の処理を行わない．
+        continue
+      self.neighbor.append(_node)
+      if not _node.content_store:  # コンテンツストアが空の場合，以下の処理を行わない．
+        continue
+      for content_id in _node.content_store.keys():
+        if not self.slimes or content_id not in self.slimes:  # 自身のスライムが存在しないまたは，自身のスライムが存在していてもcontent_idが存在しない場合，
+          self.slimes[content_id] = slime(self, _node.position)
+        else:
+          self.slimes[content_id].content_position = _node.position
     return
 
   def set_content(self, content):
@@ -228,6 +235,8 @@ class slime_node(node):  # ノードの情報や処理
   def send_packet(self):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
+
+    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
 
     flag_send_data_packet = False
     if type(self.packet) is data_packet:  # パケットがdataパケットの時

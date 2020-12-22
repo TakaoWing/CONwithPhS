@@ -10,11 +10,13 @@ class node:  # ノードの情報や処理
   que = queue.Queue()
 
   def __init__(self, number):
+    self.is_active = True  # コンテンツが起動しているかどうか？
     self.number = number
     self.position = position(0, 0)
     self.neighbor = []
     self.energy = 1
     self.buffer = 1
+    self.use_energy = 0.002
     self.content_store = {}
     self.pit = {}
     self.fib = {}
@@ -27,13 +29,23 @@ class node:  # ノードの情報や処理
     self.get_content_time = {}
     self.packet_type = ""
 
+  def check_is_active(self):
+    self.is_active = bool(self.energy > 0)
+    return
+
   def connect_links(self, nodes):
+    if not self.is_active:  # アクティブでない場合，以下の処理を行わない．
+      return
+
+    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
+
     self.neighbor = []
     for _node in nodes:
-      if _node is self:
+      if _node is self or not _node.is_active:  # 対象ノードが自分自身または，対象ノードが非アクティブの場合，以下の処理を行わない．
         continue
-      if self.position.distance(_node.position) < self.communication_range:
-        self.neighbor.append(_node)
+      if self.position.distance(_node.position) > self.communication_range:  # 対象ノードが通信可能距離以外の場合は，以下の処理を行わない．
+        continue
+      self.neighbor.append(_node)
     return
 
   def move(self):
@@ -89,12 +101,14 @@ class node:  # ノードの情報や処理
   def send_hello(self, nodes):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
+    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
     self.neighbor = []
     for _node in nodes:
-      if _node is self:
+      if _node is self or not _node.is_active:
         continue
-      if self.position.distance(_node.position) < self.communication_range:
-        self.neighbor.append(_node)
+      if self.position.distance(_node.position) > self.communication_range:
+        continue
+      self.neighbor.append(_node)
     return
 
   def select_next(self):

@@ -139,6 +139,8 @@ class pbr_node(node):  # ノードの情報や処理
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
 
+    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
+
     flag_send_data_packet = False
     if type(self.packet) is data_packet:  # パケットがdataパケットの時
       if not self.packet.living_time:
