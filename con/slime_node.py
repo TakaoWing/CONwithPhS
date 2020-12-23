@@ -58,6 +58,8 @@ class slime_node(node):  # ノードの情報や処理
     return
 
   def get_packet(self, time=None):
+    if not self.is_active:  # アクティブでない場合，以下の処理を行わない．
+      return
     self.packet, self.received_node = self.buffer_queue.get()  # バッファキューからパケットと送られてきたノードを展開
     self.packet.trace.append(self.number)  # パケットの経路に自信の番号を追加
 

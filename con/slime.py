@@ -125,9 +125,11 @@ class slime:
     self.vector_distination = self.content_position.get_vector()  # vector_disination : コンテンツ保持端末のベクトル
     # self.vector_distination = self.node.packet.content_positions.get_vector()  # vector_disination : コンテンツ保持端末のベクトル
 
-    for k_tube, v_tube in self.tubes.items():  # チューブに対して，以下の処理を実行する
-      if k_tube not in self.node.neighbor:  # 隣接ノードにないチューブを削除する
-        del self.tubes[k_tube]
+    # for k_tube, v_tube in self.tubes.items():  # チューブに対して，以下の処理を実行する
+    #   if k_tube not in self.node.neighbor:  # 隣接ノードにないチューブを削除する
+    #     del self.tubes[k_tube]
+
+    self.tubes = {k_tube: v_tube for k_tube, v_tube in self.tubes.items() if k_tube in self.node.neighbor}  # チューブの再定義（）
 
     for neighbor in self.node.neighbor:  # 隣接ノードすべてに対して，以下の処理を実行する
       if neighbor not in self.tubes:   # 隣接ノードのチューブがない場合は新しくチューブを作る
