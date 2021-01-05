@@ -199,7 +199,7 @@ def main(protocol, isAnimate=False):
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = 57  # random.randint(0, MAX_NODES)
   for num in range(10):
-    nodes[have_content_node].set_content(content(content_id="www.google.com/logo{}.png".format(num), data_size=10000))
+    nodes[have_content_node].set_content(content(content_id="www.google.com/logo{}.png".format(num), data_size=3600))  # def:data_size = 10000
   # nodes[have_content_node].content_store["www.google.com/logo2.png"] = content(content_id="www.google.com/logo2.png", data_size=10000)
   # have_content_node = 63
   # nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo2.png", data_size=10000))
@@ -258,7 +258,7 @@ def main(protocol, isAnimate=False):
     #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
     #   loop_count = node.que.qsize()
 
-    if protocol == "slime":
+    if protocol != "slime":
       nodes_update_physarum(nodes)
       for _node in nodes:
         if not _node.f_pit:
@@ -267,9 +267,10 @@ def main(protocol, isAnimate=False):
           for v in vs:
             print("Node{} → Node{}".format(_node.number, v.number), end=",")
         print("")
-
     que = queue.Queue()
     for _node in nodes:
+      if _node.request_content_times:  # _nodeの再送確認時間を計測しているなら
+        _node.update_repuest_content_times()
       if not _node.buffer_queue.qsize():
         continue
       que.put(_node)
@@ -326,8 +327,7 @@ def main(protocol, isAnimate=False):
 
 
 if __name__ == "__main__":
-  fps = 30
-  t = 100
+  fps = 50
+  t = 200
   random.seed(0)
-  want_content_num = 0
-  main("slime", isAnimate=False)
+  main("slime", isAnimate=True)

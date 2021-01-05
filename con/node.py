@@ -16,7 +16,7 @@ class node:  # ノードの情報や処理
     self.neighbor = []
     self.energy = 1
     self.buffer = 1
-    self.use_energy = 0.001
+    self.use_energy = 0.003
     self.content_store = {}
     self.pit = {}
     self.fib = {}
@@ -26,7 +26,9 @@ class node:  # ノードの情報や処理
     self.select_next_node = []
     self.mtu = 1200  # MTU: Maximum Transfer Unit default 1200[byte]
     self.request_content = {}  # request_content: {content_id,data_size}
-    self.get_content_time = {}
+    self.request_content_times = {}  # request_content_times: {content_id,time}　Interest packet送信してからの経過時間
+    self.backup_interest_packets_positions = {}  # 再送を実装するためにinterestパケットを保管
+    self.get_content_time = {}  # get_content_time: {content_id,time} slime-Interest packetからData packetの最後までの時間
     self.packet_type = ""
 
   def check_is_active(self):
@@ -52,12 +54,15 @@ class node:  # ノードの情報や処理
     self.position.move()
     return
 
-  def fragmentation(self):
+  def fragmentation(self, send_nodes=None):
     """
     Fragmentation: フラグメンテーション
     パケットサイズをネットワークの最大パケットサイズに収まるようにパケットを分割すること
     分割されたパケットは，自身のパケットキューに登録する．
     """
+    if send_nodes is None:
+      send_nodes = [self.received_node]
+
     if self.packet.content_id not in self.content_store:  # コンテンツストアに所望コンテンツのidがない場合，終了
       return
     # x Interestパケットが送信されたFaceに対して，Dataパケットを送信
@@ -66,11 +71,13 @@ class node:  # ノードの情報や処理
     ceil_packet_num = math.ceil(packet_num)
     for i in range(math.floor(packet_num)):
       data = data_packet(self, self.packet.content_id, self.mtu, max_number=ceil_packet_num, number=i)
-      self.buffer_queue.put((data, self.received_node))
+      for send_node in send_nodes:
+        self.buffer_queue.put((data, send_node))
     if packet_num % 1:
       data = data_packet(self, self.packet.content_id, self.mtu * (packet_num % 1), max_number=ceil_packet_num, number=ceil_packet_num)
-      self.buffer_queue.put((data, self.received_node))
-    node.que.put(self)
+      for send_node in send_nodes:
+        self.buffer_queue.put((data, send_node))
+    # node.que.put(self)
     return
 
   def set_content(self, content):
@@ -101,7 +108,7 @@ class node:  # ノードの情報や処理
   def send_hello(self, nodes):
     if self.packet is None:  # パケットが破棄されている場合以下の処理を行わない
       return
-    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
+    self.energy -= self.use_energy / 1000  # 通信を行うため，バッテリー残量を減少させる．
     self.neighbor = []
     for _node in nodes:
       if _node is self or not _node.is_active:
@@ -127,4 +134,7 @@ class node:  # ノードの情報や処理
     return
 
   def packet_protocol(self, nodes, time=None):
+    return
+
+  def update_repuest_content_times(self):
     return

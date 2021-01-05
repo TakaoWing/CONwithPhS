@@ -23,7 +23,7 @@ class slime_node(node):  # ノードの情報や処理
     if not self.is_active:  # アクティブでない場合，以下の処理を行わない．
       return
 
-    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
+    self.energy -= self.use_energy / 1000  # 通信を行うため，バッテリー残量を減少させる．
 
     self.neighbor = []
 
@@ -55,7 +55,7 @@ class slime_node(node):  # ノードの情報や処理
       interest = slime_interest_packet(want_content)
 
     self.buffer_queue.put((interest, self))
-    node.que.put(self)
+    # node.que.put(self)
     return
 
   def get_packet(self, time=None):
@@ -75,16 +75,25 @@ class slime_node(node):  # ノードの情報や処理
         self.pit[self.packet.content_id].append(self.received_node)
       else:
         if self.packet.content_id not in self.content_store:  # コンテンツストアにコンテンツIDがない時
-          self.content_store[self.packet.content_id] = content(content_id="www.google.com/logo.png", data_size=10000)
+          self.content_store[self.packet.content_id] = content(content_id=self.packet.content_id, data_size=3600)  # def:data_size = 10000
+          self.content_store[self.packet.content_id].cash_size += self.packet.data_size
+          self.packet.living_time = 255
         else:  # コンテンツストアにコンテンツIDがある場合
+          self.content_store[self.packet.content_id].cash_size += self.packet.data_size
           if self.content_store[self.packet.content_id].cash_size < self.content_store[self.packet.content_id].data_size:
-            self.content_store[self.packet.content_id].cash_size += self.packet.data_size
+            self.packet.living_time = 255
+          else:
+            if self.packet.content_id not in self.request_content:
+              self.fragmentation(send_nodes=self.pit[self.packet.content_id])
+            self.packet.living_time = 255
       if self.packet.content_id in self.request_content:  # パケットがコンテンツ要求端末に到達した場合
         self.packet.living_time = 255
         self.request_content[self.packet.content_id] += 1 / self.packet.max_number
         if self.request_content[self.packet.content_id] >= 1.0:
           start_time = self.get_content_time[self.packet.content_id]
           self.get_content_time[self.packet.content_id] = (time - start_time) * 20
+          del self.request_content_times[self.packet.content_id]  # 再送は行わないため，削除する
+          del self.backup_interest_packets_positions[self.packet.content_id]  # 再送は行わないため，削除する
           self.set_packet("www.google.com/logo{}.png".format(self.want_content_num))
           self.want_content_num += 1
         # print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
@@ -103,6 +112,8 @@ class slime_node(node):  # ノードの情報や処理
         print("リクエス到着！経路{}".format(self.packet.trace))
         if self.packet.content_id not in self.content_store:  # コンテンツストアにコンテンツがない場合
           self.set_packet(self.packet.content_id, self.packet.content_position)  # Interest Packetを送信
+          self.request_content_times[self.packet.content_id] = 0
+          self.backup_interest_packets_positions[self.packet.content_id] = self.packet.content_position
 
     if self.packet.is_living():
       self.packet = None
@@ -131,7 +142,7 @@ class slime_node(node):  # ノードの情報や処理
     self.flatting_request_packet.append(self.packet)
     request = slime_data_packet(self.packet.content_id, self.position, self.packet.randam_bin)
     self.buffer_queue.put((request, self.received_node))
-    node.que.put(self)
+    # node.que.put(self)
 
     self.packet = None  # パケットを破棄する
     return
@@ -243,11 +254,12 @@ class slime_node(node):  # ノードの情報や処理
 
     self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
 
-    flag_send_data_packet = False
-    if type(self.packet) is data_packet:  # パケットがdataパケットの時
-      if not self.packet.living_time:
-        flag_send_data_packet = self.packet.max_number is not self.packet.number
-    elif type(self.packet) is slime_interest_packet:  # パケットがinterestパケットの時
+    # flag_send_data_packet = False
+    # if type(self.packet) is data_packet:  # パケットがdataパケットの時
+    #   if not self.packet.living_time:
+    #     flag_send_data_packet = self.packet.max_number is not self.packet.number
+    # elif
+    if type(self.packet) is slime_interest_packet:  # パケットがinterestパケットの時
       self.flatting_request_packet.append(self.packet)
 
     self.packet.living_time += 1
@@ -255,9 +267,9 @@ class slime_node(node):  # ノードの情報や処理
       if sn not in self.neighbor:
         continue
       sn.buffer_queue.put((copy.deepcopy(self.packet), self))
-      node.que.put(sn)
-    if flag_send_data_packet:
-      node.que.put(self)
+      # node.que.put(sn)
+    # if flag_send_data_packet:
+      # node.que.put(self)
     self.packet_type = str(type(self.packet))
     self.packet = None
     return
@@ -332,4 +344,12 @@ class slime_node(node):  # ノードの情報や処理
       _slime.physarum_solver()
       for (k, v) in _slime.tubes.items():
         print("Node{}→Node{} :{}".format(self.number, k.number, vars(v)))
+    return
+
+  def update_repuest_content_times(self):
+    for content_id in self.request_content_times.keys():  # 要求コンテンツ数カウントを増やす
+      self.request_content_times[content_id] += 1
+      if self.request_content_times[content_id] >= 100:  # 指定時間を超えている場合，再送する
+        self.set_packet(content_id, self.backup_interest_packets_positions[content_id])  # Interest Packetを送信
+        self.request_content_times[content_id] = 0  # 再送を行なったため，時間をリセットする
     return
