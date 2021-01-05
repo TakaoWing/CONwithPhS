@@ -178,7 +178,7 @@ def create_graph(name, x, y):
   return
 
 
-def main(protocol):
+def main(protocol, isAnimate=False):
 
   MAX_NODES = 100  # ノードを数を設定
   if protocol == "slime":
@@ -198,7 +198,8 @@ def main(protocol):
 
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = 57  # random.randint(0, MAX_NODES)
-  nodes[have_content_node].set_content(content(content_id="www.google.com/logo.png", data_size=10000))
+  for num in range(10):
+    nodes[have_content_node].set_content(content(content_id="www.google.com/logo{}.png".format(num), data_size=10000))
   # nodes[have_content_node].content_store["www.google.com/logo2.png"] = content(content_id="www.google.com/logo2.png", data_size=10000)
   # have_content_node = 63
   # nodes[have_content_node].content_store.append(content(content_id="www.google.com/logo2.png", data_size=10000))
@@ -212,15 +213,21 @@ def main(protocol):
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
   # want_content_node = 70
   # nodes[want_content_node].set_packet("www.google.com/logo.png")
+
   if protocol == "slime":
     want_content_node = 93
-    nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
+    nodes[want_content_node].set_packet("www.google.com/logo0.png")  # コンテンツの位置を知らない
 
   file_name = get_file_name(nodes)
   print(file_name)
-  fig = plt.figure(figsize=(10, 10))
+  if isAnimate:
+    fig = plt.figure(figsize=(10, 10))
 
   trafic_list = []
+
+  def init():
+    # do nothing
+    pass
 
   def animate(i):
     # if i == 50:
@@ -228,6 +235,10 @@ def main(protocol):
     #   nodes[want_content_node].set_packet("www.google.com/logo.png")
     #   want_content_node = 71
     #   nodes[want_content_node].set_packet("www.google.com/logo.png")
+    # if protocol == "slime" and i % 30 == 0 and i <= 100:
+    #   want_content_node = 93
+    #   want_content_num = int(i / 30)
+    #   nodes[want_content_node].set_packet("www.google.com/logo{}.png".format(want_content_num))  # コンテンツの位置を知らない
 
     plt.cla()
     check_nodes_active(nodes)
@@ -239,13 +250,13 @@ def main(protocol):
     G.add_nodes_from(nodes)
     G.add_edges_from(nodes_link)
 
-    if protocol == "pbr" and i == 20:
-      want_content_node = 93
-      nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
+    # if protocol == "pbr" and i == 20:
+    #   want_content_node = 93
+    #   nodes[want_content_node].set_packet("www.google.com/logo.png")  # コンテンツの位置を知らない
 
-      # if loop_count == 0: # コンテンツが全て到着時，再びコンテンツを要求
-      #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
-      #   loop_count = node.que.qsize()
+    # if loop_count == 0: # コンテンツが全て到着時，再びコンテンツを要求
+    #   nodes[want_content_node].set_packet("www.google.com/logo.png", nodes[have_content_node].position)
+    #   loop_count = node.que.qsize()
 
     if protocol == "slime":
       nodes_update_physarum(nodes)
@@ -290,24 +301,27 @@ def main(protocol):
     plt.title("t=" + str(i))
 
     # グラフの保存
-    plt.savefig("Export/netork.png")
+    if isAnimate:
+      plt.savefig("Export/netork.png")
     # グラフの表示
     # plt.pause(0.001)
     # nodes_move(nodes)
 
     return
 
-  anim = FuncAnimation(fig, animate, frames=t, interval=10, repeat=True)
-  anim.save("Export/{}_{}.gif".format(protocol, file_name), writer="imagemagick", fps=fps)
-  # create_graph(name="traffic", x=trafic_list, y=list(range(len(trafic_list))))
+  if isAnimate:
+    anim = FuncAnimation(fig, animate, init_func=init, frames=t, interval=10, repeat=False)
+    anim.save("Export/{}_{}.gif".format(protocol, file_name), writer="imagemagick", fps=fps)
+  else:
+    for i in range(t):
+      animate(i)
+
   for _node in nodes:
     if not _node.request_content:
       continue
-    print("Node{}".format(_node.number), end=" ")
+    print("Node{}".format(_node.number))
     for k, v in _node.request_content.items():
-      print("Content_id:{} Delivery rate:{}".format(k, v), end=" ")
-    for k, v in _node.get_content_time.items():
-      print("end to end time :{}".format(v))
+      print("Content_id:{} Delivery rate:{} end to end time :{}".format(k, format(v, ".2f"), _node.get_content_time[k]))
   return
 
 
@@ -315,4 +329,5 @@ if __name__ == "__main__":
   fps = 30
   t = 100
   random.seed(0)
-  main("slime")
+  want_content_num = 0
+  main("slime", isAnimate=False)

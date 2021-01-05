@@ -16,7 +16,7 @@ class node:  # ノードの情報や処理
     self.neighbor = []
     self.energy = 1
     self.buffer = 1
-    self.use_energy = 0.008
+    self.use_energy = 0.001
     self.content_store = {}
     self.pit = {}
     self.fib = {}

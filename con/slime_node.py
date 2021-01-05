@@ -17,6 +17,7 @@ class slime_node(node):  # ノードの情報や処理
     self.content_position = position(0, 0)
     self.received_node = None
     self.flatting_request_packet = []
+    self.want_content_num = 1
 
   def connect_links(self, nodes):
     if not self.is_active:  # アクティブでない場合，以下の処理を行わない．
@@ -84,6 +85,8 @@ class slime_node(node):  # ノードの情報や処理
         if self.request_content[self.packet.content_id] >= 1.0:
           start_time = self.get_content_time[self.packet.content_id]
           self.get_content_time[self.packet.content_id] = (time - start_time) * 20
+          self.set_packet("www.google.com/logo{}.png".format(self.want_content_num))
+          self.want_content_num += 1
         # print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
     elif type_packet is slime_interest_packet:  # slime-interestパケットの時
       if not self.packet.living_time:
