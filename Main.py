@@ -249,6 +249,7 @@ def main(protocol, isAnimate=False):
     #   nodes[want_content_node].set_packet("www.google.com/logo{}.png".format(want_content_num))  # コンテンツの位置を知らない
 
     plt.cla()
+    plt.clf()
     check_nodes_active(nodes)
     nodes_position = get_nodes_position(nodes)
     nodes_link = get_nodes_link(nodes)
@@ -329,6 +330,7 @@ def main(protocol, isAnimate=False):
   if isAnimate:
     anim = FuncAnimation(fig, animate, init_func=init, frames=t, interval=10, repeat=False)
     anim.save("Export/{}_{}.gif".format(protocol, file_name), writer="imagemagick", fps=fps)
+    plt.close()
   else:
     # unit_time = 0
     # while True:
@@ -352,6 +354,6 @@ def main(protocol, isAnimate=False):
 
 if __name__ == "__main__":
   fps = 50
-  t = 300
+  t = 1000
   random.seed(0)
-  main("slime", isAnimate=True)
+  main("slime", isAnimate=False)
