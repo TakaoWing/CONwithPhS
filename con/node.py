@@ -7,7 +7,10 @@ import math
 
 
 class node:  # ノードの情報や処理
-  que = queue.Queue()
+  # que = queue.Queue()
+  nodes_battery = []
+  active_nodes_num = []
+  is_all_done = False
 
   def __init__(self, number):
     self.is_active = True  # コンテンツが起動しているかどうか？
@@ -16,7 +19,7 @@ class node:  # ノードの情報や処理
     self.neighbor = []
     self.energy = 1
     self.buffer = 1
-    self.use_energy = 0.003
+    self.use_energy = 0.05
     self.content_store = {}
     self.pit = {}
     self.fib = {}
@@ -30,6 +33,7 @@ class node:  # ノードの情報や処理
     self.backup_interest_packets_positions = {}  # 再送を実装するためにinterestパケットを保管
     self.get_content_time = {}  # get_content_time: {content_id,time} slime-Interest packetからData packetの最後までの時間
     self.packet_type = ""
+    self.is_check_battery = False
 
   def check_is_active(self):
     self.is_active = bool(self.energy > 0)
@@ -39,7 +43,7 @@ class node:  # ノードの情報や処理
     if not self.is_active:  # アクティブでない場合，以下の処理を行わない．
       return
 
-    self.energy -= self.use_energy  # 通信を行うため，バッテリー残量を減少させる．
+    self.energy -= self.use_energy / 1000  # 通信を行うため，バッテリー残量を減少させる．
 
     self.neighbor = []
     for _node in nodes:

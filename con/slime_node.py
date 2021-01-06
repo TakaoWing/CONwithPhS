@@ -96,6 +96,7 @@ class slime_node(node):  # ノードの情報や処理
           del self.backup_interest_packets_positions[self.packet.content_id]  # 再送は行わないため，削除する
           self.set_packet("www.google.com/logo{}.png".format(self.want_content_num))
           self.want_content_num += 1
+          self.is_check_battery = True
         # print("コンテンツ{}到着！経路{}".format(self.packet.number, self.packet.trace))
     elif type_packet is slime_interest_packet:  # slime-interestパケットの時
       if not self.packet.living_time:

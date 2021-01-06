@@ -12,6 +12,7 @@ import queue
 import yaml
 
 # my classess
+from con.node import node
 from con.slime_node import slime_node
 from con.pbr_node import pbr_node
 from con.content import content
@@ -198,7 +199,7 @@ def main(protocol, isAnimate=False):
 
   # コンテンツ保持端末とコンテンツ要求端末をランダムで決定する
   have_content_node = 57  # random.randint(0, MAX_NODES)
-  for num in range(10):
+  for num in range(100):
     nodes[have_content_node].set_content(content(content_id="www.google.com/logo{}.png".format(num), data_size=3600))  # def:data_size = 10000
   # nodes[have_content_node].content_store["www.google.com/logo2.png"] = content(content_id="www.google.com/logo2.png", data_size=10000)
   # have_content_node = 63
@@ -224,6 +225,13 @@ def main(protocol, isAnimate=False):
     fig = plt.figure(figsize=(10, 10))
 
   trafic_list = []
+
+  node.nodes_battery.append(0)
+  node.active_nodes_num.append(0)
+  for _node in nodes:
+    node.nodes_battery[len(node.nodes_battery) - 1] += _node.energy
+    if _node.is_active:
+      node.active_nodes_num[len(node.active_nodes_num) - 1] += 1
 
   def init():
     # do nothing
@@ -290,6 +298,14 @@ def main(protocol, isAnimate=False):
         if from_node.number > to_node.number:
           from_node, to_node = to_node, from_node
         edges_communication.append((from_node, to_node, type_packet))
+      if _node.is_check_battery:
+        node.nodes_battery.append(0)
+        node.active_nodes_num.append(0)
+        for _node in nodes:
+          node.nodes_battery[len(node.nodes_battery) - 1] += _node.energy
+          if _node.is_active:
+            node.active_nodes_num[len(node.active_nodes_num) - 1] += 1
+        _node.is_check_battery = False
 
     trafic_list.append(trafic_num)
 
@@ -314,6 +330,11 @@ def main(protocol, isAnimate=False):
     anim = FuncAnimation(fig, animate, init_func=init, frames=t, interval=10, repeat=False)
     anim.save("Export/{}_{}.gif".format(protocol, file_name), writer="imagemagick", fps=fps)
   else:
+    # unit_time = 0
+    # while True:
+    #   animate(unit_time)
+    #   unit_time += 1
+
     for i in range(t):
       animate(i)
 
@@ -323,11 +344,14 @@ def main(protocol, isAnimate=False):
     print("Node{}".format(_node.number))
     for k, v in _node.request_content.items():
       print("Content_id:{} Delivery rate:{} end to end time :{}".format(k, format(v, ".2f"), _node.get_content_time[k]))
+
+  for battery, active_nodes_num in zip(node.nodes_battery, node.active_nodes_num):
+    print("All_nodes_battery:{},Active_nodes_num:{}".format(battery, active_nodes_num))
   return
 
 
 if __name__ == "__main__":
   fps = 50
-  t = 200
+  t = 300
   random.seed(0)
   main("slime", isAnimate=True)
